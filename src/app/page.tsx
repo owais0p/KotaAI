@@ -283,8 +283,7 @@ function DashboardOverview() {
             </Button>
             <Button
               onClick={() => { setUpgradePlan('premium'); setUpgradeModalOpen(true); }}
-              variant="outline"
-              className="border-white text-white hover:bg-white/10 font-semibold"
+              className="bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold shadow-lg border border-amber-300"
             >
               <Sparkles className="size-4 mr-2" />
               Premium — ₹699/mo
