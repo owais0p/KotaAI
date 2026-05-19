@@ -89,7 +89,7 @@ const stats = [
 ];
 
 /* ─── Animated Counter Hook ─── */
-function useCountUp(target: number, duration = 2000, started: boolean) {
+function useCountUp(target: number, duration = 2800, started: boolean) {
   const [count, setCount] = useState(0);
   const rafRef = useRef<number>(0);
 
@@ -101,9 +101,15 @@ function useCountUp(target: number, duration = 2000, started: boolean) {
     function step(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCount(Math.round(eased * target));
+
+      // Smooth ease-out expo — very gentle deceleration
+      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+
+      // Use floor for sub-1 increments so small targets (like 4) still step 0→1→2→3→4
+      const raw = eased * target;
+      const next = progress >= 1 ? target : Math.round(raw);
+
+      setCount(next);
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(step);
