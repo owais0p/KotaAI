@@ -125,3 +125,25 @@ Stage Summary:
 - Simulated payment fully replaced with real Razorpay SDK integration
 - Server-side signature verification ensures payment authenticity
 - Frontend uses Razorpay checkout.js for secure payment popup
+
+---
+Task ID: 4
+Agent: main
+Task: Fix login TypeError crash
+
+Work Log:
+- User reported TypeError dialog when clicking login button
+- Used browser agent to reproduce: "Runtime TypeError: Cannot read properties of undefined (reading 'name')" in PaymentModal.tsx line 188
+- Root cause: AuthPage always renders PaymentModal, but `signupPlan` defaults to 'free', and `PLAN_DETAILS` object has no 'free' key (only 'pro' and 'premium')
+- `PLAN_DETAILS['free']` → undefined → `planDetail.name` → TypeError
+- Also found database had old SHA-256 password hashes (from before bcrypt migration) causing login to always fail with "Invalid email or password"
+- Fixed both issues:
+  1. Reset database and re-seeded with bcrypt-hashed passwords
+  2. Added defensive fallback in PaymentModal: `PLAN_DETAILS[plan] ?? PLAN_DETAILS.pro`
+  3. Conditional render in AuthPage: only render PaymentModal when `signupPlan !== 'free'`
+- Browser test confirmed: login works end-to-end, no errors
+
+Stage Summary:
+- Two root causes: (1) stale SHA-256 hashes in DB after bcrypt migration, (2) PaymentModal crash from invalid plan key
+- Both fixed, login fully functional
+- Test accounts: aarav@kotaai.com / password123 (Pro), priya@kotaai.com / password123 (Premium), etc.

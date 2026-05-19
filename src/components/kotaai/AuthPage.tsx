@@ -491,20 +491,22 @@ export default function AuthPage() {
         </p>
       </div>
 
-      {/* Payment Modal for signup */}
-      <PaymentModal
-        open={paymentModalOpen}
-        onOpenChange={(open) => {
-          setPaymentModalOpen(open);
-          if (!open && pendingUser) {
-            // User closed without paying — still go to dashboard as free user
-            setView('dashboard');
-            setPendingUser(null);
-          }
-        }}
-        plan={signupPlan as 'pro' | 'premium'}
-        onSuccess={handlePaymentSuccess}
-      />
+      {/* Payment Modal for signup - only render when a paid plan is selected */}
+      {signupPlan !== 'free' && (
+        <PaymentModal
+          open={paymentModalOpen}
+          onOpenChange={(open) => {
+            setPaymentModalOpen(open);
+            if (!open && pendingUser) {
+              // User closed without paying — still go to dashboard as free user
+              setView('dashboard');
+              setPendingUser(null);
+            }
+          }}
+          plan={signupPlan as 'pro' | 'premium'}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 }

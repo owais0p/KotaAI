@@ -78,7 +78,7 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
   const [step, setStep] = useState<'checkout' | 'processing' | 'success' | 'error'>('checkout');
   const [error, setError] = useState('');
 
-  const planDetail = PLAN_DETAILS[plan];
+  const planDetail = PLAN_DETAILS[plan] ?? PLAN_DETAILS.pro;
 
   const handlePayment = async () => {
     if (!user?.id) return;
