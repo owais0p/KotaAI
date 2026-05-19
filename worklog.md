@@ -147,3 +147,28 @@ Stage Summary:
 - Two root causes: (1) stale SHA-256 hashes in DB after bcrypt migration, (2) PaymentModal crash from invalid plan key
 - Both fixed, login fully functional
 - Test accounts: aarav@kotaai.com / password123 (Pro), priya@kotaai.com / password123 (Premium), etc.
+
+---
+Task ID: 5
+Agent: main
+Task: Expand question bank from 40 to 200 MCQs and fix 10-question session cap
+
+Work Log:
+- User reported only 10 MCQs per subject despite UI showing "50 MCQs"
+- Root causes: (1) seed DB only had 10 questions per subject, (2) practice API hardcoded maxQuestions=10
+- Generated 200 MCQs (50 per subject) using parallel agent tasks for Physics, Chemistry, Maths, Biology
+- Questions are JEE/NEET level with difficulty distribution: ~15 easy, ~25 medium, ~10 hard per subject
+- Topics cover full syllabus: Mechanics, Electrostatics, Optics, Organic Chemistry, Calculus, Cell Biology, etc.
+- Moved questions to `src/lib/questions.json` to avoid 97KB inline array crashing the dev server
+- Updated seed route to load questions from JSON file at runtime using `fs.readFileSync`
+- Fixed practice API: changed `maxQuestions` from 10 to 50 for Pro/Premium users
+- Changed z-ai-web-dev-sdk from static import to dynamic import to prevent server crashes
+- Adjusted background AI generation threshold from <50 to <30 to avoid unnecessary SDK loads
+- Reset database and re-seeded with 200 questions
+- Verified all 4 subjects return 50 questions via practice API
+
+Stage Summary:
+- Question bank expanded from 40 → 200 MCQs (50 per subject)
+- Practice API now serves 50 questions per session (was capped at 10)
+- Server stability improved with dynamic SDK import and JSON file loading
+- All subjects verified: Physics 50, Chemistry 50, Maths 50, Biology 50

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import ZAI from 'z-ai-web-dev-sdk';
 
 const VALID_SUBJECTS = ['Physics', 'Chemistry', 'Maths', 'Biology'];
 
@@ -17,6 +16,7 @@ interface GeneratedQuestion {
 }
 
 async function generateQuestionsViaAI(subject: string): Promise<GeneratedQuestion[]> {
+  const ZAI = (await import('z-ai-web-dev-sdk')).default;
   const zai = await ZAI.create();
 
   const prompt = `Generate exactly 10 multiple-choice questions for JEE/NEET exam preparation in ${subject}. Each question must have 4 options (A, B, C, D) and exactly one correct answer.
@@ -135,7 +135,8 @@ export async function GET(request: Request) {
     });
 
     // If we have fewer than 50 questions for this subject, generate more in background
-    if (questionCount < 50) {
+    // Only trigger if significantly below target to avoid frequent SDK loading
+    if (questionCount < 30) {
       // Fire-and-forget background generation — don't block the response
       generateQuestionsViaAI(subject)
         .then(async (generatedQuestions) => {
@@ -184,7 +185,8 @@ export async function GET(request: Request) {
     const unattempted = questions.filter((q) => !attemptedIds.has(q.id));
 
     // Determine how many questions to return based on plan
-    const maxQuestions = planLimits.mcqPerDay === -1 ? 10 : Math.min(10, planLimits.mcqPerDay - usage.mcqAttempts);
+    // Pro/Premium: up to 50 questions per session, Free: limited by daily quota
+    const maxQuestions = planLimits.mcqPerDay === -1 ? 50 : Math.min(50, planLimits.mcqPerDay - usage.mcqAttempts);
     const selectedQuestions = unattempted.length >= maxQuestions
       ? unattempted.slice(0, maxQuestions)
       : (unattempted.length > 0 ? unattempted : questions.slice(0, maxQuestions));
