@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,11 +82,112 @@ const features = [
 ];
 
 const stats = [
-  { value: '50,000+', label: 'Questions', icon: BookOpen },
-  { value: '24/7', label: 'AI Tutor', icon: Clock },
-  { value: '10,000+', label: 'Students', icon: Users },
-  { value: '4', label: 'Subjects', icon: GraduationCap },
+  { target: 50000, suffix: '+', label: 'Questions', icon: BookOpen },
+  { target: 24, suffix: '/7', label: 'AI Tutor', icon: Clock },
+  { target: 10000, suffix: '+', label: 'Students', icon: Users },
+  { target: 4, suffix: '', label: 'Subjects', icon: GraduationCap },
 ];
+
+/* ─── Animated Counter Hook ─── */
+function useCountUp(target: number, duration = 2000, started: boolean) {
+  const [count, setCount] = useState(0);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!started) return;
+
+    const startTime = performance.now();
+
+    function step(now: number) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * target));
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(step);
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, duration, started]);
+
+  return started ? count : 0;
+}
+
+/* ─── Animated Stat Card ─── */
+function AnimatedStatCard({
+  target,
+  suffix,
+  label,
+  icon: Icon,
+  started,
+}: {
+  target: number;
+  suffix: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  started: boolean;
+}) {
+  const count = useCountUp(target, 2000, started);
+
+  const formatNumber = (n: number) => {
+    if (n >= 1000) {
+      return n.toLocaleString('en-IN');
+    }
+    return n.toString();
+  };
+
+  return (
+    <div className="flex flex-col items-center p-4 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-orange-100/80 shadow-sm transition-transform duration-300 hover:scale-105">
+      <Icon className="size-6 text-orange-500 mb-2" />
+      <span className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
+        {formatNumber(count)}{suffix}
+      </span>
+      <span className="text-sm text-gray-500 mt-1">{label}</span>
+    </div>
+  );
+}
+
+/* ─── Scroll-triggered Stats Row ─── */
+function AnimatedStatsRow() {
+  const [started, setStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const onIntersect = useCallback((entries: IntersectionObserverEntry[]) => {
+    if (entries[0]?.isIntersecting) {
+      setStarted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(onIntersect, { threshold: 0.3 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onIntersect]);
+
+  return (
+    <div
+      ref={ref}
+      className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto"
+    >
+      {stats.map((stat) => (
+        <AnimatedStatCard
+          key={stat.label}
+          target={stat.target}
+          suffix={stat.suffix}
+          label={stat.label}
+          icon={stat.icon}
+          started={started}
+        />
+      ))}
+    </div>
+  );
+}
 
 const plans = [
   {
@@ -324,20 +425,7 @@ export default function LandingPage() {
             </div>
 
             {/* Stats Row */}
-            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex flex-col items-center p-4 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-orange-100/80 shadow-sm"
-                >
-                  <stat.icon className="size-6 text-orange-500 mb-2" />
-                  <span className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {stat.value}
-                  </span>
-                  <span className="text-sm text-gray-500 mt-1">{stat.label}</span>
-                </div>
-              ))}
-            </div>
+            <AnimatedStatsRow />
           </div>
         </section>
 
