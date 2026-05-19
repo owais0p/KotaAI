@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,7 +20,7 @@ import {
   LogOut,
   Menu,
   GraduationCap,
-  Home,
+  Home as HomeIcon,
   ChevronRight,
   Sparkles,
   Zap,
@@ -35,7 +35,7 @@ import LeaderboardPage from '@/components/kotaai/LeaderboardPage';
 
 /* ───────── Navigation Items ───────── */
 const NAV_ITEMS = [
-  { id: 'dashboard' as const, label: 'Overview', icon: Home },
+  { id: 'dashboard' as const, label: 'Overview', icon: HomeIcon },
   { id: 'chat' as const, label: 'AI Tutor', icon: MessageSquare },
   { id: 'practice' as const, label: 'Practice', icon: BookOpen },
   { id: 'progress' as const, label: 'Progress', icon: BarChart3 },
@@ -405,12 +405,13 @@ function DashboardShell() {
 /* ───────── Main Page Component ───────── */
 export default function Home() {
   const { currentView, user, setView } = useAppStore();
-  const [hydrated, setHydrated] = useState(false);
 
-  // Handle hydration
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
+  // Hydration-safe mount detection using useSyncExternalStore
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // If user is logged in and on landing/auth, redirect to dashboard
   useEffect(() => {
@@ -427,7 +428,7 @@ export default function Home() {
   }, [user, currentView, setView]);
 
   // Prevent flash of wrong content during hydration
-  if (!hydrated) {
+  if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
