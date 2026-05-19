@@ -19,8 +19,9 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Mail, Lock, User } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, User, CreditCard } from 'lucide-react';
 import Image from 'next/image';
+import PaymentModal from '@/components/kotaai/PaymentModal';
 import type { User as UserType } from '@/lib/types';
 
 type Plan = 'free' | 'pro' | 'premium';
@@ -30,19 +31,19 @@ const plans: { value: Plan; label: string; price: string; description: string }[
     value: 'free',
     label: 'Free',
     price: '₹0',
-    description: 'Basic access',
+    description: '5 MCQs/day, 3 AI Qs/day',
   },
   {
     value: 'pro',
     label: 'Pro',
     price: '₹299/mo',
-    description: 'More features',
+    description: 'Unlimited access',
   },
   {
     value: 'premium',
     label: 'Premium',
     price: '₹699/mo',
-    description: 'All features',
+    description: 'All features + mentorship',
   },
 ];
 
@@ -65,6 +66,8 @@ export default function AuthPage() {
   const [signupLoading, setSignupLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState('login');
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [pendingUser, setPendingUser] = useState<UserType | null>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -137,6 +140,9 @@ export default function AuthPage() {
 
     setSignupLoading(true);
     try {
+      // For paid plans, always create as free first, then upgrade via payment
+      const planToCreate = signupPlan === 'free' ? 'free' : 'free';
+
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -145,7 +151,7 @@ export default function AuthPage() {
           name: signupName.trim(),
           email: signupEmail.trim(),
           password: signupPassword,
-          plan: signupPlan,
+          plan: planToCreate,
         }),
       });
 
@@ -164,14 +170,26 @@ export default function AuthPage() {
         avatar: data.user.avatar || '',
       };
 
-      setUser(user);
-      setView('dashboard');
+      // If paid plan selected, open payment modal instead of going to dashboard
+      if (signupPlan !== 'free') {
+        setUser(user); // Log them in first
+        setPendingUser(user);
+        setPaymentModalOpen(true);
+      } else {
+        setUser(user);
+        setView('dashboard');
+      }
     } catch {
       setSignupError('Network error. Please check your connection.');
     } finally {
       setSignupLoading(false);
     }
   }
+
+  const handlePaymentSuccess = (updatedUser: UserType) => {
+    setPendingUser(null);
+    setView('dashboard');
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-orange-50 px-4 py-8">
@@ -420,6 +438,13 @@ export default function AuthPage() {
                               </svg>
                             </div>
                           )}
+                          {/* Payment badge for paid plans */}
+                          {plan.value !== 'free' && signupPlan === plan.value && (
+                            <div className="flex items-center gap-0.5 mt-1">
+                              <CreditCard className="size-2.5 text-orange-500" />
+                              <span className="text-[9px] text-orange-500 font-medium">Payment required</span>
+                            </div>
+                          )}
                         </label>
                       ))}
                     </RadioGroup>
@@ -441,8 +466,13 @@ export default function AuthPage() {
                         <span className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         Creating Account...
                       </span>
+                    ) : signupPlan !== 'free' ? (
+                      <span className="flex items-center gap-2">
+                        <CreditCard className="size-4" />
+                        Continue to Payment
+                      </span>
                     ) : (
-                      'Create Account'
+                      'Create Free Account'
                     )}
                   </Button>
                 </form>
@@ -456,6 +486,21 @@ export default function AuthPage() {
           Policy.
         </p>
       </div>
+
+      {/* Payment Modal for signup */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onOpenChange={(open) => {
+          setPaymentModalOpen(open);
+          if (!open && pendingUser) {
+            // User closed without paying — still go to dashboard as free user
+            setView('dashboard');
+            setPendingUser(null);
+          }
+        }}
+        plan={signupPlan as 'pro' | 'premium'}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }

@@ -15,7 +15,9 @@ import {
   RotateCcw,
   ArrowRight,
 } from 'lucide-react';
-import type { Subject, PracticeQuestion } from '@/lib/types';
+import UpgradePrompt from '@/components/kotaai/UpgradePrompt';
+import PaymentModal from '@/components/kotaai/PaymentModal';
+import type { Subject, PracticeQuestion, User } from '@/lib/types';
 
 interface QuestionResult {
   correct: boolean;
@@ -30,10 +32,10 @@ interface SubjectCard {
 }
 
 const SUBJECTS: SubjectCard[] = [
-  { name: 'Physics', icon: '⚛️', questions: 10 },
-  { name: 'Chemistry', icon: '🧪', questions: 10 },
-  { name: 'Maths', icon: '📐', questions: 10 },
-  { name: 'Biology', icon: '🧬', questions: 10 },
+  { name: 'Physics', icon: '⚛️', questions: 50 },
+  { name: 'Chemistry', icon: '🧪', questions: 50 },
+  { name: 'Maths', icon: '📐', questions: 50 },
+  { name: 'Biology', icon: '🧬', questions: 50 },
 ];
 
 const DIFFICULTY_CONFIG: Record<string, { label: string; className: string }> = {
@@ -60,6 +62,42 @@ export default function PracticePage() {
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(0);
 
+  // ── Limit state ──
+  const [limitReached, setLimitReached] = useState(false);
+  const [mcqUsage, setMcqUsage] = useState({ used: 0, limit: 5 });
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentPlan, setPaymentPlan] = useState<'pro' | 'premium'>('pro');
+
+  // ── Fetch usage on mount ──
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/usage?userId=${encodeURIComponent(user.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setMcqUsage({
+            used: data.usage.mcqAttempts,
+            limit: data.usage.mcqLimit === -1 ? Infinity : data.usage.mcqLimit,
+          });
+          setLimitReached(data.usage.mcqRemaining === 0);
+        }
+      })
+      .catch(() => {});
+  }, [user?.id]);
+
+  // ── Handle upgrade ──
+  const handleUpgrade = (plan: 'pro' | 'premium') => {
+    setPaymentPlan(plan);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = (updatedUser: User) => {
+    setLimitReached(false);
+    setMcqUsage({ used: mcqUsage.used, limit: Infinity });
+    // Re-fetch questions after upgrade
+    fetchQuestions();
+  };
+
   // ── Fetch questions on subject change ──
   const fetchQuestions = useCallback(async () => {
     if (!user?.id) return;
@@ -79,6 +117,20 @@ export default function PracticePage() {
 
       if (data.success && Array.isArray(data.questions)) {
         setQuestions(data.questions);
+        // Update usage info
+        if (data.usage) {
+          setMcqUsage({
+            used: data.usage.mcqAttempts,
+            limit: data.usage.mcqLimit === -1 ? Infinity : data.usage.mcqLimit,
+          });
+        }
+      } else if (data.limitReached) {
+        setLimitReached(true);
+        setMcqUsage({
+          used: data.usage.mcqAttempts,
+          limit: data.usage.mcqLimit === -1 ? Infinity : data.usage.mcqLimit,
+        });
+        setQuestions([]);
       } else {
         toast({
           title: 'Error',
@@ -100,13 +152,15 @@ export default function PracticePage() {
   }, [selectedSubject, user?.id, toast]);
 
   useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
+    if (!limitReached) {
+      fetchQuestions();
+    }
+  }, [fetchQuestions, limitReached]);
 
   // ── Submit individual answer ──
   const submitAnswer = useCallback(
     async (questionId: string, selectedAnswer: string) => {
-      if (!user?.id || results[questionId]) return; // already submitted
+      if (!user?.id || results[questionId]) return;
       setIsSubmittingAnswer(true);
 
       try {
@@ -130,6 +184,17 @@ export default function PracticePage() {
               explanation: data.explanation,
             },
           }));
+
+          // Update usage info from response
+          if (data.usage) {
+            setMcqUsage({
+              used: data.usage.mcqAttempts,
+              limit: data.usage.mcqLimit === -1 ? Infinity : data.usage.mcqLimit,
+            });
+            if (data.usage.mcqRemaining === 0 && data.usage.mcqLimit !== -1) {
+              setLimitReached(true);
+            }
+          }
         } else {
           toast({
             title: 'Error',
@@ -153,7 +218,7 @@ export default function PracticePage() {
   // ── Handle option selection ──
   const handleOptionSelect = (optionLetter: string) => {
     const question = questions[currentIndex];
-    if (!question || results[question.id]) return; // already answered
+    if (!question || results[question.id]) return;
 
     setAnswers((prev) => ({ ...prev, [question.id]: optionLetter }));
     submitAnswer(question.id, optionLetter);
@@ -209,6 +274,19 @@ export default function PracticePage() {
         <p className="text-sm text-muted-foreground mt-1">
           Test your knowledge with MCQs
         </p>
+        {/* Usage badge for free users */}
+        {user?.plan === 'free' && (
+          <Badge
+            variant="outline"
+            className={`mt-2 text-xs ${
+              mcqUsage.used >= mcqUsage.limit
+                ? 'border-red-300 text-red-600 bg-red-50'
+                : 'border-orange-200 text-orange-600 bg-orange-50'
+            }`}
+          >
+            {mcqUsage.used}/{mcqUsage.limit} MCQs used today
+          </Badge>
+        )}
       </div>
 
       {/* ── Subject Selector ── */}
@@ -251,8 +329,20 @@ export default function PracticePage() {
         })}
       </div>
 
+      {/* ── Limit Reached ── */}
+      {limitReached && !isLoadingQuestions && (
+        <UpgradePrompt
+          title="Daily MCQ Limit Reached"
+          description="You've used all your free MCQ attempts for today. Upgrade for unlimited practice!"
+          limitType="mcq"
+          used={mcqUsage.used}
+          limit={mcqUsage.limit}
+          onUpgrade={handleUpgrade}
+        />
+      )}
+
       {/* ── Loading State ── */}
-      {isLoadingQuestions && (
+      {isLoadingQuestions && !limitReached && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
@@ -264,7 +354,7 @@ export default function PracticePage() {
       )}
 
       {/* ── No Questions ── */}
-      {!isLoadingQuestions && questions.length === 0 && (
+      {!isLoadingQuestions && questions.length === 0 && !limitReached && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
             <p className="text-muted-foreground">No questions available.</p>
@@ -291,7 +381,7 @@ export default function PracticePage() {
                 <span className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                   {correctCount}
                 </span>
-                <span className="text-lg text-muted-foreground">/10</span>
+                <span className="text-lg text-muted-foreground">/{questions.length}</span>
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 Score
@@ -344,16 +434,44 @@ export default function PracticePage() {
               <Button
                 onClick={fetchQuestions}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                disabled={limitReached}
               >
                 <RotateCcw className="size-4 mr-1" />
                 Practice Again
               </Button>
             </div>
+
+            {/* Upgrade CTA if limit reached */}
+            {limitReached && (
+              <div className="w-full rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-4 text-center text-white">
+                <p className="text-sm font-semibold mb-1">Want more practice?</p>
+                <p className="text-xs text-orange-100 mb-3">
+                  Upgrade for unlimited daily MCQs
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    size="sm"
+                    className="bg-white text-orange-600 hover:bg-orange-50 font-semibold"
+                    onClick={() => handleUpgrade('pro')}
+                  >
+                    Pro ₹299/mo
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-white text-white hover:bg-white/10"
+                    onClick={() => handleUpgrade('premium')}
+                  >
+                    Premium ₹699/mo
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* ── Question Display (normal or review mode) ── */}
+      {/* ── Question Display ── */}
       {!isLoadingQuestions && questions.length > 0 && (!showSummary || reviewingAnswers) && currentQuestion && (
         <>
           {/* Progress */}
@@ -440,7 +558,6 @@ export default function PracticePage() {
                       className={optionClass}
                       aria-label={`Option ${label}: ${optionText}`}
                     >
-                      {/* Letter badge */}
                       <span
                         className={`
                           flex items-center justify-center size-8 shrink-0 rounded-lg text-sm font-bold
@@ -460,12 +577,10 @@ export default function PracticePage() {
                         {label}
                       </span>
 
-                      {/* Option text */}
                       <span className="text-sm md:text-base pt-0.5 flex-1 text-foreground">
                         {optionText}
                       </span>
 
-                      {/* Result icon */}
                       {isSubmitted && isCorrectOption && (
                         <CheckCircle2 className="size-5 text-emerald-600 shrink-0 mt-0.5" />
                       )}
@@ -477,7 +592,7 @@ export default function PracticePage() {
                 })}
               </div>
 
-              {/* Explanation (after answering) */}
+              {/* Explanation */}
               {currentResult && currentResult.explanation && (
                 <div
                   className={`
@@ -518,7 +633,6 @@ export default function PracticePage() {
               Previous
             </Button>
 
-            {/* Dot indicators */}
             <div className="hidden sm:flex items-center gap-1.5">
               {questions.map((q, i) => {
                 const hasResult = !!results[q.id];
@@ -572,6 +686,14 @@ export default function PracticePage() {
           </div>
         </>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onOpenChange={setPaymentModalOpen}
+        plan={paymentPlan}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }

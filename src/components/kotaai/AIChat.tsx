@@ -7,8 +7,11 @@ import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import type { ChatMessage, Subject } from '@/lib/types';
+import UpgradePrompt from '@/components/kotaai/UpgradePrompt';
+import PaymentModal from '@/components/kotaai/PaymentModal';
+import type { ChatMessage, Subject, User } from '@/lib/types';
 
 const SUBJECTS: { label: string; value: Subject; emoji: string }[] = [
   { label: 'Physics', value: 'Physics', emoji: '⚛️' },
@@ -54,7 +57,6 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         isUser ? 'ml-auto flex-row-reverse' : ''
       }`}
     >
-      {/* Avatar */}
       {isUser ? (
         <div className="flex items-center justify-center size-8 rounded-full bg-orange-500 shrink-0">
           <UserCircle className="size-4 text-white" />
@@ -65,7 +67,6 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         </div>
       )}
 
-      {/* Bubble */}
       <div
         className={`rounded-2xl px-4 py-3 shadow-sm ${
           isUser
@@ -73,7 +74,6 @@ function ChatBubble({ message }: { message: ChatMessage }) {
             : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
         }`}
       >
-        {/* AI label */}
         {!isUser && (
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="text-xs">🎓</span>
@@ -83,7 +83,6 @@ function ChatBubble({ message }: { message: ChatMessage }) {
           </div>
         )}
 
-        {/* Content */}
         <div
           className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${
             isUser ? '' : 'prose-sm'
@@ -104,23 +103,15 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 /* ───────── AI Content Formatter ───────── */
 function formatAIContent(text: string): string {
   let html = text;
-
-  // Bold: **text** → <strong>text</strong>
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-  // Numbered steps: "1. " or "1) " at line start → highlighted
   html = html.replace(
     /^(\d+[\.\)])\s/gm,
     '<span class="text-orange-600 font-semibold">$1</span> '
   );
-
-  // Bullet points: "- " or "* " at line start → styled
   html = html.replace(
     /^[-*]\s/gm,
     '<span class="text-orange-500 mr-1">&#8226;</span> '
   );
-
-  // Line breaks are handled by whitespace-pre-wrap, no <br> needed
   return html;
 }
 
@@ -138,8 +129,29 @@ export default function AIChat() {
 
   const { toast } = useToast();
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [limitReached, setLimitReached] = useState(false);
+  const [aiUsage, setAiUsage] = useState({ used: 0, limit: 3 });
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentPlan, setPaymentPlan] = useState<'pro' | 'premium'>('pro');
+
+  /* ── Fetch usage on mount ── */
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/usage?userId=${encodeURIComponent(user.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setAiUsage({
+            used: data.usage.aiQuestions,
+            limit: data.usage.aiLimit === -1 ? Infinity : data.usage.aiLimit,
+          });
+          setLimitReached(data.usage.aiRemaining === 0);
+        }
+      })
+      .catch(() => {});
+  }, [user?.id]);
 
   /* ── Auto-scroll ── */
   const scrollToBottom = useCallback(() => {
@@ -156,7 +168,7 @@ export default function AIChat() {
     if (!el) return;
     el.style.height = 'auto';
     const lineHeight = parseInt(getComputedStyle(el).lineHeight) || 24;
-    const maxHeight = lineHeight * 3 + 16; // 3 lines + padding
+    const maxHeight = lineHeight * 3 + 16;
     el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
   }, []);
 
@@ -164,12 +176,28 @@ export default function AIChat() {
     adjustTextareaHeight();
   }, [input, adjustTextareaHeight]);
 
+  /* ── Handle upgrade ── */
+  const handleUpgrade = (plan: 'pro' | 'premium') => {
+    setPaymentPlan(plan);
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentSuccess = (updatedUser: User) => {
+    setLimitReached(false);
+    setAiUsage({ used: aiUsage.used, limit: Infinity });
+    // The store is already updated by PaymentModal
+  };
+
   /* ── Send Message ── */
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading || !user) return;
 
-    // Create user message
+    // Check limit locally before sending
+    if (limitReached) {
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}-user`,
       role: 'user',
@@ -182,7 +210,6 @@ export default function AIChat() {
     setInput('');
     setIsLoading(true);
 
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -202,6 +229,19 @@ export default function AIChat() {
       const data = await res.json();
 
       if (!data.success) {
+        if (data.limitReached) {
+          setLimitReached(true);
+          setAiUsage({
+            used: data.usage.aiQuestions,
+            limit: data.usage.aiLimit === -1 ? Infinity : data.usage.aiLimit,
+          });
+          toast({
+            title: 'Daily Limit Reached',
+            description: `Free plan allows only ${data.usage.aiLimit} AI questions per day. Upgrade for unlimited!`,
+            variant: 'destructive',
+          });
+          return;
+        }
         throw new Error(data.error || 'Failed to get response');
       }
 
@@ -214,6 +254,12 @@ export default function AIChat() {
       };
 
       addChatMessage(aiMessage);
+
+      // Update local usage count
+      setAiUsage((prev) => ({ ...prev, used: prev.used + 1 }));
+      if (user.plan === 'free' && aiUsage.used + 1 >= aiUsage.limit) {
+        setLimitReached(true);
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Something went wrong';
@@ -226,7 +272,7 @@ export default function AIChat() {
       setIsLoading(false);
       textareaRef.current?.focus();
     }
-  }, [input, isLoading, user, selectedSubject, chatMessages, addChatMessage, setIsLoading, toast]);
+  }, [input, isLoading, user, selectedSubject, chatMessages, addChatMessage, setIsLoading, toast, limitReached, aiUsage]);
 
   /* ── Keyboard handler ── */
   const handleKeyDown = useCallback(
@@ -270,6 +316,20 @@ export default function AIChat() {
               </button>
             );
           })}
+
+          {/* Usage indicator for free users */}
+          {user?.plan === 'free' && (
+            <Badge
+              variant="outline"
+              className={`ml-auto text-xs whitespace-nowrap ${
+                aiUsage.used >= aiUsage.limit
+                  ? 'border-red-300 text-red-600 bg-red-50'
+                  : 'border-orange-200 text-orange-600 bg-orange-50'
+              }`}
+            >
+              {aiUsage.used}/{aiUsage.limit} AI questions today
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -277,7 +337,7 @@ export default function AIChat() {
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 p-4 min-h-full">
           {/* Empty state */}
-          {chatMessages.length === 0 && !isLoading && (
+          {chatMessages.length === 0 && !isLoading && !limitReached && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -294,6 +354,18 @@ export default function AIChat() {
                 I&apos;ll explain it step-by-step
               </p>
             </motion.div>
+          )}
+
+          {/* Limit reached upgrade prompt */}
+          {limitReached && (
+            <UpgradePrompt
+              title="Daily AI Question Limit Reached"
+              description="You've used all your free AI questions for today. Upgrade to ask unlimited questions!"
+              limitType="ai"
+              used={aiUsage.used}
+              limit={aiUsage.limit}
+              onUpgrade={handleUpgrade}
+            />
           )}
 
           {/* Messages */}
@@ -322,15 +394,19 @@ export default function AIChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={`Ask any doubt from ${selectedSubject}...`}
-              disabled={isLoading}
+              placeholder={
+                limitReached
+                  ? 'Upgrade to ask more questions...'
+                  : `Ask any doubt from ${selectedSubject}...`
+              }
+              disabled={isLoading || limitReached}
               rows={1}
-              className="resize-none min-h-[44px] max-h-[104px] pr-3 py-3 text-sm rounded-xl border-gray-300 focus-visible:border-orange-400 focus-visible:ring-orange-400/30 bg-gray-50 placeholder:text-gray-400"
+              className="resize-none min-h-[44px] max-h-[104px] pr-3 py-3 text-sm rounded-xl border-gray-300 focus-visible:border-orange-400 focus-visible:ring-orange-400/30 bg-gray-50 placeholder:text-gray-400 disabled:opacity-60"
             />
           </div>
           <Button
             onClick={sendMessage}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || limitReached}
             size="icon"
             className="size-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white shrink-0 shadow-md disabled:opacity-50 transition-all"
             aria-label="Send message"
@@ -343,9 +419,21 @@ export default function AIChat() {
           </Button>
         </div>
         <p className="text-[11px] text-gray-400 text-center mt-1.5">
-          Press Enter to send &middot; Shift+Enter for new line
+          {limitReached ? (
+            <span className="text-red-500">Limit reached — upgrade to continue</span>
+          ) : (
+            <>Press Enter to send &middot; Shift+Enter for new line</>
+          )}
         </p>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={paymentModalOpen}
+        onOpenChange={setPaymentModalOpen}
+        plan={paymentPlan}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }

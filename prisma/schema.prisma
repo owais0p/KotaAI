@@ -21,6 +21,8 @@ model User {
   practiceAttempts PracticeAttempt[]
   progressTopics   ProgressTopic[]
   leaderboardEntry LeaderboardEntry?
+  dailyUsage       DailyUsage[]
+  payments         Payment[]
 }
 
 model ChatMessage {
@@ -83,6 +85,35 @@ model LeaderboardEntry {
   week      String
   rank      Int      @default(0)
   updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DailyUsage {
+  id             String   @id @default(cuid())
+  userId         String
+  date           String   // YYYY-MM-DD format
+  mcqAttempts    Int      @default(0)
+  aiQuestions    Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  plan            String   // "pro" or "premium"
+  amount          Int      // in paise (₹29900 = ₹299, ₹69900 = ₹699)
+  currency        String   @default("INR")
+  razorpayOrderId String
+  razorpayPaymentId String @default("")
+  status          String   @default("created") // created, paid, failed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

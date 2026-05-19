@@ -23,6 +23,47 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check free tier limits
+    const today = new Date().toISOString().split('T')[0];
+    const limits = {
+      free: { aiQuestionsPerDay: 3 },
+      pro: { aiQuestionsPerDay: -1 },
+      premium: { aiQuestionsPerDay: -1 },
+    };
+    const planLimits = limits[user.plan as keyof typeof limits] || limits.free;
+
+    if (planLimits.aiQuestionsPerDay !== -1) {
+      let usage = await db.dailyUsage.findUnique({
+        where: { userId_date: { userId, date: today } },
+      });
+
+      if (!usage) {
+        usage = await db.dailyUsage.create({
+          data: { userId, date: today, mcqAttempts: 0, aiQuestions: 0 },
+        });
+      }
+
+      if (usage.aiQuestions >= planLimits.aiQuestionsPerDay) {
+        return NextResponse.json({
+          success: false,
+          error: 'Daily AI question limit reached',
+          limitReached: true,
+          usage: {
+            aiQuestions: usage.aiQuestions,
+            aiLimit: planLimits.aiQuestionsPerDay,
+            aiRemaining: 0,
+            plan: user.plan,
+          },
+        });
+      }
+
+      // Increment usage
+      await db.dailyUsage.update({
+        where: { userId_date: { userId, date: today } },
+        data: { aiQuestions: { increment: 1 } },
+      });
+    }
+
     // Save user message to database
     await db.chatMessage.create({
       data: {

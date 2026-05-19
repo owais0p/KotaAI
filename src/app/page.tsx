@@ -33,6 +33,7 @@ import AIChat from '@/components/kotaai/AIChat';
 import PracticePage from '@/components/kotaai/PracticePage';
 import ProgressPage from '@/components/kotaai/ProgressPage';
 import LeaderboardPage from '@/components/kotaai/LeaderboardPage';
+import PaymentModal from '@/components/kotaai/PaymentModal';
 
 /* ───────── Navigation Items ───────── */
 const NAV_ITEMS = [
@@ -46,6 +47,8 @@ const NAV_ITEMS = [
 /* ───────── Dashboard Overview Component ───────── */
 function DashboardOverview() {
   const { user, setView, setSelectedSubject } = useAppStore();
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<'pro' | 'premium'>('pro');
 
   const quickActions = [
     {
@@ -83,10 +86,10 @@ function DashboardOverview() {
   ];
 
   const subjects = [
-    { name: 'Physics', emoji: '⚛️', color: 'border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-800', count: '10 MCQs' },
-    { name: 'Chemistry', emoji: '🧪', color: 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800', count: '10 MCQs' },
-    { name: 'Maths', emoji: '📐', color: 'border-sky-300 bg-sky-50 dark:bg-sky-950/30 dark:border-sky-800', count: '10 MCQs' },
-    { name: 'Biology', emoji: '🧬', color: 'border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800', count: '10 MCQs' },
+    { name: 'Physics', emoji: '⚛️', color: 'border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-800', count: '50 MCQs' },
+    { name: 'Chemistry', emoji: '🧪', color: 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800', count: '50 MCQs' },
+    { name: 'Maths', emoji: '📐', color: 'border-sky-300 bg-sky-50 dark:bg-sky-950/30 dark:border-sky-800', count: '50 MCQs' },
+    { name: 'Biology', emoji: '🧬', color: 'border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800', count: '50 MCQs' },
   ];
 
   const planBadge = user?.plan === 'premium'
@@ -184,8 +187,8 @@ function DashboardOverview() {
           <div className="flex items-center justify-center size-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 mx-auto mb-2">
             <BookOpen className="size-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <p className="text-2xl font-bold">40+</p>
-          <p className="text-xs text-muted-foreground">Daily MCQs</p>
+          <p className="text-2xl font-bold">200+</p>
+          <p className="text-xs text-muted-foreground">MCQ Bank</p>
         </div>
         <div className="rounded-xl border bg-card p-4 text-center">
           <div className="flex items-center justify-center size-10 rounded-lg bg-purple-100 dark:bg-purple-950/50 mx-auto mb-2">
@@ -203,22 +206,57 @@ function DashboardOverview() {
         </div>
       </div>
 
-      {/* CTA Banner */}
-      <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
-        <h3 className="text-lg font-bold mb-1">
-          Start Today&apos;s Practice Session
-        </h3>
-        <p className="text-sm text-orange-100 mb-4">
-          Complete your daily MCQs and climb the leaderboard!
-        </p>
-        <Button
-          onClick={() => setView('practice')}
-          className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
-        >
-          <BookOpen className="size-4 mr-2" />
-          Start Practicing
-        </Button>
-      </div>
+      {/* CTA Banner - Free users: Upgrade prompt, Paid users: Practice prompt */}
+      {user?.plan === 'free' ? (
+        <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
+          <h3 className="text-lg font-bold mb-1">
+            Unlock Unlimited Practice
+          </h3>
+          <p className="text-sm text-orange-100 mb-4">
+            Free plan: 5 MCQs/day & 3 AI questions/day. Upgrade for unlimited access!
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              onClick={() => { setUpgradePlan('pro'); setUpgradeModalOpen(true); }}
+              className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
+            >
+              <Zap className="size-4 mr-2" />
+              Upgrade to Pro — ₹299/mo
+            </Button>
+            <Button
+              onClick={() => { setUpgradePlan('premium'); setUpgradeModalOpen(true); }}
+              variant="outline"
+              className="border-white text-white hover:bg-white/10 font-semibold"
+            >
+              <Sparkles className="size-4 mr-2" />
+              Premium — ₹699/mo
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
+          <h3 className="text-lg font-bold mb-1">
+            Start Today&apos;s Practice Session
+          </h3>
+          <p className="text-sm text-orange-100 mb-4">
+            Complete your daily MCQs and climb the leaderboard!
+          </p>
+          <Button
+            onClick={() => setView('practice')}
+            className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
+          >
+            <BookOpen className="size-4 mr-2" />
+            Start Practicing
+          </Button>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
+        plan={upgradePlan}
+      />
     </div>
   );
 }
@@ -228,6 +266,8 @@ function DashboardShell() {
   const { currentView, setView, user, logout } = useAppStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [seeded, setSeeded] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<'pro' | 'premium'>('pro');
 
   // Seed database on first load
   useEffect(() => {
@@ -302,6 +342,19 @@ function DashboardShell() {
 
       {/* User Section */}
       <div className="border-t p-3">
+        {/* Upgrade banner for free users */}
+        {user?.plan === 'free' && (
+          <button
+            onClick={() => {
+              setUpgradePlan('pro');
+              setUpgradeModalOpen(true);
+            }}
+            className="w-full mb-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2 text-sm text-white font-medium hover:from-orange-600 hover:to-amber-600 transition-all flex items-center gap-2"
+          >
+            <Zap className="size-4" />
+            Upgrade to Pro
+          </button>
+        )}
         <div className="flex items-center gap-3 px-2 py-2">
           <Avatar className="size-9">
             <AvatarFallback className="bg-orange-500 text-white text-sm font-bold">
@@ -404,6 +457,13 @@ function DashboardShell() {
           {renderContent()}
         </main>
       </div>
+
+      {/* Payment Modal (shared by sidebar upgrade button) */}
+      <PaymentModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
+        plan={upgradePlan}
+      />
     </div>
   );
 }

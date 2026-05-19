@@ -130,3 +130,32 @@ Stage Summary:
 - Complete SPA with client-side routing via Zustand
 - Responsive sidebar navigation with mobile Sheet
 - All views properly connected and functional
+
+---
+Task ID: 5
+Agent: Main Orchestrator
+Task: Implement Razorpay payment, expand question bank, add free tier limits
+
+Work Log:
+- Updated Prisma schema with DailyUsage and Payment models
+- Pushed new schema to SQLite (reset DB)
+- Created /api/payment/route.ts with POST (create order) and PUT (verify/complete) endpoints
+- Created /api/usage/route.ts with GET (check usage) and POST (increment usage) endpoints
+- Updated /api/chat/route.ts to enforce 3 AI questions/day limit for free users
+- Updated /api/practice/route.ts to enforce 5 MCQs/day limit for free users + auto-generate questions up to 50/subject
+- Created PaymentModal component with checkout → processing → success/error flow (simulated Razorpay)
+- Created UpgradePrompt component with usage bar and plan comparison cards
+- Updated AIChat.tsx with usage badge, limit detection, and upgrade prompt when limit reached
+- Updated PracticePage.tsx with usage badge, limit detection, upgrade prompt, and upgrade CTA in summary
+- Updated AuthPage.tsx with payment flow for paid plans during signup
+- Updated DashboardOverview with upgrade CTA banner for free users
+- Added "Upgrade to Pro" button in sidebar for free users
+- Updated LandingPage pricing features to reflect free tier limits
+- Updated subject MCQ counts from 10 to 50
+- All lint checks pass
+
+Stage Summary:
+- Razorpay payment flow: Simulated checkout with order creation, payment processing, plan upgrade
+- Question bank: Auto-generates up to 50 questions per subject via AI when pool is below 50
+- Free tier limits: 5 MCQs/day + 3 AI questions/day with upgrade prompts
+- Upgrade CTAs: In sidebar, dashboard banner, practice page, chat page, and signup flow

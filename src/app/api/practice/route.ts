@@ -50,7 +50,6 @@ Generate 10 questions now:`;
 
   const content = completion.choices[0]?.message?.content || '[]';
 
-  // Try to parse JSON from the response - handle potential markdown wrapping
   let jsonStr = content;
   const jsonMatch = content.match(/\[[\s\S]*\]/);
   if (jsonMatch) {
@@ -89,49 +88,85 @@ export async function GET(request: Request) {
       );
     }
 
-    // Check if questions exist in DB for this subject
-    let questions = await db.practiceQuestion.findMany({
-      where: { subject },
-      take: 10,
-      orderBy: { createdAt: 'desc' },
+    // Check free tier MCQ limits
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const limits = {
+      free: { mcqPerDay: 5 },
+      pro: { mcqPerDay: -1 },
+      premium: { mcqPerDay: -1 },
+    };
+    const planLimits = limits[user.plan as keyof typeof limits] || limits.free;
+
+    let usage = await db.dailyUsage.findUnique({
+      where: { userId_date: { userId, date: today } },
     });
 
-    // If no questions exist, generate them using AI
-    if (questions.length === 0) {
-      const generatedQuestions = await generateQuestionsViaAI(subject);
-
-      if (generatedQuestions.length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Failed to generate questions. Please try again.' },
-          { status: 500 }
-        );
-      }
-
-      // Save generated questions to database
-      for (const q of generatedQuestions) {
-        await db.practiceQuestion.create({
-          data: {
-            subject,
-            topic: q.topic || 'General',
-            question: q.question,
-            optionA: q.optionA,
-            optionB: q.optionB,
-            optionC: q.optionC,
-            optionD: q.optionD,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
-            difficulty: q.difficulty || 'medium',
-          },
-        });
-      }
-
-      // Fetch the newly created questions
-      questions = await db.practiceQuestion.findMany({
-        where: { subject },
-        take: 10,
-        orderBy: { createdAt: 'desc' },
+    if (!usage) {
+      usage = await db.dailyUsage.create({
+        data: { userId, date: today, mcqAttempts: 0, aiQuestions: 0 },
       });
     }
+
+    if (planLimits.mcqPerDay !== -1 && usage.mcqAttempts >= planLimits.mcqPerDay) {
+      return NextResponse.json({
+        success: false,
+        error: 'Daily MCQ limit reached',
+        limitReached: true,
+        usage: {
+          mcqAttempts: usage.mcqAttempts,
+          mcqLimit: planLimits.mcqPerDay,
+          mcqRemaining: 0,
+          plan: user.plan,
+        },
+      });
+    }
+
+    // Check if questions exist in DB for this subject
+    const questionCount = await db.practiceQuestion.count({
+      where: { subject },
+    });
+
+    // If we have fewer than 50 questions for this subject, generate more
+    if (questionCount < 50) {
+      try {
+        const generatedQuestions = await generateQuestionsViaAI(subject);
+        if (generatedQuestions.length > 0) {
+          for (const q of generatedQuestions) {
+            await db.practiceQuestion.create({
+              data: {
+                subject,
+                topic: q.topic || 'General',
+                question: q.question,
+                optionA: q.optionA,
+                optionB: q.optionB,
+                optionC: q.optionC,
+                optionD: q.optionD,
+                correctAnswer: q.correctAnswer,
+                explanation: q.explanation,
+                difficulty: q.difficulty || 'medium',
+              },
+            });
+          }
+        }
+      } catch (genError) {
+        console.error('Auto-generate questions error:', genError);
+        // Continue with existing questions
+      }
+    }
+
+    // Fetch questions
+    const questions = await db.practiceQuestion.findMany({
+      where: { subject },
+      orderBy: { createdAt: 'desc' },
+    });
 
     // Get user's previous attempts to filter out already answered questions
     const attemptedQuestionIds = await db.practiceAttempt.findMany({
@@ -143,8 +178,11 @@ export async function GET(request: Request) {
     // Prefer unattempted questions
     const unattempted = questions.filter((q) => !attemptedIds.has(q.id));
 
-    // If we have enough unattempted questions, use those; otherwise use all
-    const selectedQuestions = unattempted.length >= 10 ? unattempted.slice(0, 10) : (unattempted.length > 0 ? unattempted : questions.slice(0, 10));
+    // Determine how many questions to return based on plan
+    const maxQuestions = planLimits.mcqPerDay === -1 ? 10 : Math.min(10, planLimits.mcqPerDay - usage.mcqAttempts);
+    const selectedQuestions = unattempted.length >= maxQuestions
+      ? unattempted.slice(0, maxQuestions)
+      : (unattempted.length > 0 ? unattempted : questions.slice(0, maxQuestions));
 
     // Return questions without correctAnswer
     const safeQuestions = selectedQuestions.map((q) => ({
@@ -162,6 +200,11 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       questions: safeQuestions,
+      usage: {
+        mcqAttempts: usage.mcqAttempts,
+        mcqLimit: planLimits.mcqPerDay,
+        mcqRemaining: planLimits.mcqPerDay === -1 ? -1 : Math.max(0, planLimits.mcqPerDay - usage.mcqAttempts),
+      },
     });
   } catch (error) {
     console.error('Practice GET error:', error);
@@ -206,6 +249,14 @@ export async function POST(request: Request) {
         selectedAnswer: selectedAnswer.toUpperCase(),
         isCorrect,
       },
+    });
+
+    // Update daily usage
+    const today = new Date().toISOString().split('T')[0];
+    await db.dailyUsage.upsert({
+      where: { userId_date: { userId, date: today } },
+      create: { userId, date: today, mcqAttempts: 1, aiQuestions: 0 },
+      update: { mcqAttempts: { increment: 1 } },
     });
 
     // Update or create progress topic
@@ -277,12 +328,29 @@ export async function POST(request: Request) {
       where: { userId },
     });
 
+    // Get updated usage
+    const usage = await db.dailyUsage.findUnique({
+      where: { userId_date: { userId, date: today } },
+    });
+    const user = await db.user.findUnique({ where: { id: userId } });
+    const limits = {
+      free: { mcqPerDay: 5 },
+      pro: { mcqPerDay: -1 },
+      premium: { mcqPerDay: -1 },
+    };
+    const planLimits = limits[(user?.plan || 'free') as keyof typeof limits] || limits.free;
+
     return NextResponse.json({
       success: true,
       correct: isCorrect,
       correctAnswer: question.correctAnswer,
       explanation: question.explanation,
       score: leaderboard?.score || 0,
+      usage: {
+        mcqAttempts: usage?.mcqAttempts || 0,
+        mcqLimit: planLimits.mcqPerDay,
+        mcqRemaining: planLimits.mcqPerDay === -1 ? -1 : Math.max(0, planLimits.mcqPerDay - (usage?.mcqAttempts || 0)),
+      },
     });
   } catch (error) {
     console.error('Practice POST error:', error);
