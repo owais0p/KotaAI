@@ -11,8 +11,24 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Check, CreditCard, Shield, Loader2, Sparkles } from 'lucide-react';
+import { Check, CreditCard, Shield, Sparkles } from 'lucide-react';
 import type { User } from '@/lib/types';
+
+const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
+
+function loadRazorpayScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).Razorpay) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = RAZORPAY_SCRIPT_URL;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+    document.body.appendChild(script);
+  });
+}
 
 const PLAN_DETAILS = {
   pro: {
@@ -66,11 +82,11 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
 
   const handlePayment = async () => {
     if (!user?.id) return;
-    setStep('processing');
+    setStep('checkout');
     setError('');
 
     try {
-      // Step 1: Create order
+      // Step 1: Create order on server
       const orderRes = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,40 +98,70 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
         throw new Error(orderData.error || 'Failed to create order');
       }
 
-      // Step 2: Simulate Razorpay payment (in production, this would open Razorpay checkout)
-      // For demo, we simulate a short delay then auto-complete
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Step 2: Load Razorpay script
+      await loadRazorpayScript();
 
-      // Step 3: Verify payment
-      const verifyRes = await fetch('/api/payment', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentId: orderData.paymentId,
-          razorpayPaymentId: `pay_simulated_${Date.now()}`,
-          plan,
-        }),
-      });
-      const verifyData = await verifyRes.json();
+      // Step 3: Open Razorpay checkout
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'KotaAI',
+        description: `Upgrade to ${planDetail.name}`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: user.name,
+          email: user.email,
+        },
+        theme: {
+          color: '#f97316', // orange-500
+        },
+        handler: async function (response: any) {
+          // Payment successful - verify on server
+          try {
+            setStep('processing');
+            const verifyRes = await fetch('/api/payment', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentId: orderData.paymentId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                plan,
+              }),
+            });
+            const verifyData = await verifyRes.json();
 
-      if (!verifyData.success) {
-        throw new Error(verifyData.error || 'Payment verification failed');
-      }
+            if (!verifyData.success) {
+              throw new Error(verifyData.error || 'Payment verification failed');
+            }
 
-      // Step 4: Update user in store
-      const updatedUser: User = {
-        id: verifyData.user.id,
-        email: verifyData.user.email,
-        name: verifyData.user.name,
-        plan: verifyData.user.plan,
-        avatar: verifyData.user.avatar,
+            const updatedUser: User = {
+              id: verifyData.user.id,
+              email: verifyData.user.email,
+              name: verifyData.user.name,
+              plan: verifyData.user.plan,
+              avatar: verifyData.user.avatar,
+              streak: verifyData.user.streak ?? 0,
+              lastPracticeDate: verifyData.user.lastPracticeDate ?? '',
+            };
+            setUser(updatedUser);
+            setStep('success');
+            if (onSuccess) onSuccess(updatedUser);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Payment verification failed');
+            setStep('error');
+          }
+        },
       };
-      setUser(updatedUser);
-      setStep('success');
 
-      if (onSuccess) {
-        onSuccess(updatedUser);
-      }
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setError(response.error.description || 'Payment failed');
+        setStep('error');
+      });
+      rzp.open();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Payment failed';
       setError(msg);
@@ -168,23 +214,12 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
                 ))}
               </ul>
 
-              {/* Simulated payment form */}
-              <div className="space-y-3 p-4 rounded-xl border bg-card">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Payment Details
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CreditCard className="size-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Card ending ****4242</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">Expires 12/28</span>
-                  </div>
+              {/* Razorpay redirect note */}
+              <div className="space-y-2 p-4 rounded-xl border bg-card">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CreditCard className="size-4 text-muted-foreground flex-shrink-0" />
+                  <span>You&apos;ll be redirected to Razorpay&apos;s secure payment gateway</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground bg-muted/50 rounded-md px-2 py-1">
-                  🧪 Demo mode — payment is simulated, no real charges
-                </p>
               </div>
 
               {/* Security note */}
@@ -211,7 +246,7 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
               <CreditCard className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 text-orange-500" />
             </div>
             <div className="text-center">
-              <p className="text-base font-semibold">Processing Payment...</p>
+              <p className="text-base font-semibold">Verifying Payment...</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Please wait while we confirm your payment
               </p>

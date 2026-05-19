@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { randomBytes } from 'crypto';
+import { createHmac } from 'crypto';
+import Razorpay from 'razorpay';
 
-// Simulated Razorpay order creation
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
+
+// Razorpay order creation
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -32,7 +38,13 @@ export async function POST(request: Request) {
 
     const amount = plan === 'pro' ? 29900 : 69900; // in paise
     const currency = 'INR';
-    const razorpayOrderId = `order_${randomBytes(12).toString('hex')}`;
+
+    const order = await razorpay.orders.create({
+      amount,
+      currency,
+      receipt: `receipt_${Date.now()}`,
+      notes: { userId, plan },
+    });
 
     const payment = await db.payment.create({
       data: {
@@ -40,23 +52,19 @@ export async function POST(request: Request) {
         plan,
         amount,
         currency,
-        razorpayOrderId,
+        razorpayOrderId: order.id,
         status: 'created',
       },
     });
 
     return NextResponse.json({
       success: true,
-      orderId: razorpayOrderId,
+      orderId: order.id,
       paymentId: payment.id,
       amount,
       currency,
       plan,
-      key: 'rzp_test_simulated',
-      prefill: {
-        name: user.name,
-        email: user.email,
-      },
+      key: process.env.RAZORPAY_KEY_ID!,
     });
   } catch (error) {
     console.error('Payment create error:', error);
@@ -71,11 +79,24 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { paymentId, razorpayPaymentId, plan } = body;
+    const { paymentId, razorpayOrderId, razorpayPaymentId, razorpaySignature, plan } = body;
 
-    if (!paymentId || !plan) {
+    if (!paymentId || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature || !plan) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Verify signature
+    const sigBody = `${razorpayOrderId}|${razorpayPaymentId}`;
+    const expectedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .update(sigBody)
+      .digest('hex');
+
+    if (expectedSignature !== razorpaySignature) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid payment signature' },
         { status: 400 }
       );
     }
@@ -98,13 +119,11 @@ export async function PUT(request: Request) {
       );
     }
 
-    const simulatedPaymentId = razorpayPaymentId || `pay_${randomBytes(12).toString('hex')}`;
-
     await db.payment.update({
       where: { id: paymentId },
       data: {
         status: 'paid',
-        razorpayPaymentId: simulatedPaymentId,
+        razorpayPaymentId,
       },
     });
 
@@ -121,6 +140,8 @@ export async function PUT(request: Request) {
         name: updatedUser.name,
         plan: updatedUser.plan,
         avatar: updatedUser.avatar,
+        streak: updatedUser.streak,
+        lastPracticeDate: updatedUser.lastPracticeDate,
       },
     });
   } catch (error) {

@@ -56,3 +56,72 @@ Stage Summary:
 - Practice API now responds in <200ms instead of 27+ seconds
 - Auth API now returns complete user data including avatar field
 - Server stability improved by removing tee pipe from dev script
+
+---
+Task ID: 3
+Agent: main
+Task: Rewrite leaderboard API to show only real registered users ranked by total correct practice answers
+
+Work Log:
+- Read current leaderboard route.ts — it used LeaderboardEntry model with weekly ranking via getWeekString()
+- Read prisma schema to confirm PracticeAttempt model has userId and isCorrect fields
+- Replaced entire route implementation:
+  - Removed getWeekString() function (no longer needed for all-time ranking)
+  - Removed dependency on LeaderboardEntry model for ranking data
+  - Used Prisma groupBy on PracticeAttempt where isCorrect=true, grouped by userId
+  - Fetched user details (name, avatar) separately for the ranked user IDs
+  - Built leaderboard entries with rank based on descending correct answer count
+  - Changed week field from computed ISO week to 'all-time'
+  - Returns empty array gracefully when fewer than 3 users exist (frontend handles empty state)
+- LeaderboardEntry model kept in schema for backward compatibility, just not queried
+- Lint passes clean on the modified file
+- Dev server running without errors
+
+Stage Summary:
+- Leaderboard API now dynamically calculates rankings from real PracticeAttempt data
+- No more dependency on seeded/fake LeaderboardEntry records
+- All-time ranking instead of weekly
+- Graceful empty state for fewer than 3 users
+
+## Task 1: Replace SHA-256 password hashing with bcryptjs
+
+**Files modified:**
+- `src/app/api/auth/route.ts`
+- `src/app/api/seed/route.ts`
+
+**Changes:**
+1. **auth/route.ts**: Removed `import { createHash } from 'crypto'` and `hashPassword` function. Added `import bcrypt from 'bcryptjs'`. Replaced signup hashing with `await bcrypt.hash(password, 10)`. Replaced login hash comparison with `await bcrypt.compare(password, user.password)`.
+2. **seed/route.ts**: Removed `import { createHash } from 'crypto'` and `hashPassword` function. Added `import bcrypt from 'bcryptjs'`. Replaced `hashPassword(u.password)` with `await bcrypt.hash(u.password, 10)`.
+
+**Result:** All other logic preserved. Lint passes (only pre-existing error in unrelated example file).
+
+---
+Task ID: 2
+Agent: main
+Task: Replace simulated Razorpay payment with real Razorpay SDK integration
+
+Work Log:
+- Read both files: `src/app/api/payment/route.ts` and `src/components/kotaai/PaymentModal.tsx`
+- Confirmed `razorpay` package (v2.9.6) already installed in package.json
+- Confirmed Prisma schema already has `razorpayOrderId` and `razorpayPaymentId` fields on Payment model
+
+**Backend changes (route.ts):**
+1. Replaced `import { randomBytes } from 'crypto'` with `import { createHmac } from 'crypto'` and `import Razorpay from 'razorpay'`
+2. Created Razorpay instance with `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` env vars
+3. POST handler: Replaced simulated order ID generation (`randomBytes`) with real `razorpay.orders.create()` call; saved payment with real `order.id` as `razorpayOrderId`; returned `order.id` as `orderId` and real `RAZORPAY_KEY_ID` as `key`
+4. PUT handler: Added HMAC-SHA256 signature verification using `razorpayOrderId|razorpayPaymentId` as the body; returns 400 if signature mismatch; now accepts `razorpayOrderId`, `razorpayPaymentId`, `razorpaySignature` fields in addition to `paymentId` and `plan`; also returns `streak` and `lastPracticeDate` in user response
+
+**Frontend changes (PaymentModal.tsx):**
+1. Added `RAZORPAY_SCRIPT_URL` constant and `loadRazorpayScript()` helper function that dynamically loads the Razorpay checkout.js script
+2. Replaced simulated payment flow in `handlePayment`: now creates order → loads Razorpay script → opens Razorpay checkout popup with real `order_id`
+3. Handler callback in Razorpay options: on success, calls PUT /api/payment with `razorpay_order_id`, `razorpay_payment_id`, `razorpay_signature` for server-side verification
+4. Added `payment.failed` event listener on Razorpay instance to catch payment failures
+5. Removed simulated payment form (card ending ****4242, demo mode note) from checkout UI
+6. Replaced with simpler "You'll be redirected to Razorpay's secure payment gateway" message
+7. Kept `processing` step (now only shown briefly during server-side verification after Razorpay popup closes), `success`, and `error` steps
+
+Stage Summary:
+- Both files pass ESLint with no errors
+- Simulated payment fully replaced with real Razorpay SDK integration
+- Server-side signature verification ensures payment authenticity
+- Frontend uses Razorpay checkout.js for secure payment popup

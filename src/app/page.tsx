@@ -25,6 +25,8 @@ import {
   ChevronRight,
   Sparkles,
   Zap,
+  Flame,
+  AlertTriangle,
 } from 'lucide-react';
 
 import LandingPage from '@/components/kotaai/LandingPage';
@@ -46,9 +48,27 @@ const NAV_ITEMS = [
 
 /* ───────── Dashboard Overview Component ───────── */
 function DashboardOverview() {
-  const { user, setView, setSelectedSubject } = useAppStore();
+  const { user, setView, setSelectedSubject, setUser } = useAppStore();
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<'pro' | 'premium'>('pro');
+  const [streakAtRisk, setStreakAtRisk] = useState(false);
+
+  // Fetch streak status
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/streak?userId=${encodeURIComponent(user.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setStreakAtRisk(data.streakAtRisk);
+          // Update user in store with latest streak
+          if (user.streak !== data.streak) {
+            setUser({ ...user, streak: data.streak, lastPracticeDate: data.lastPracticeDate });
+          }
+        }
+      })
+      .catch(() => {});
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const quickActions = [
     {
@@ -113,12 +133,50 @@ function DashboardOverview() {
             <Badge variant="outline" className={planBadge.class}>
               {planBadge.label}
             </Badge>
+            {/* Streak Badge */}
+            {(user?.streak ?? 0) > 0 && (
+              <Badge
+                className={`gap-1 font-bold ${
+                  streakAtRisk
+                    ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 animate-pulse'
+                    : 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800'
+                }`}
+              >
+                <Flame className={`size-3.5 ${streakAtRisk ? 'text-red-500' : 'text-orange-500'}`} />
+                {user?.streak} day{user?.streak !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
           <p className="text-muted-foreground text-sm mt-1">
             Ready to crack JEE & NEET? Let&apos;s continue your preparation.
           </p>
         </div>
       </div>
+
+      {/* Streak at Risk Warning */}
+      {streakAtRisk && (user?.streak ?? 0) > 0 && (
+        <div className="flex items-center gap-3 rounded-xl border-2 border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20 p-4">
+          <div className="flex items-center justify-center size-10 rounded-full bg-red-100 dark:bg-red-950/50 shrink-0">
+            <AlertTriangle className="size-5 text-red-600 dark:text-red-400" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-red-700 dark:text-red-400">
+              🔥 Streak at risk!
+            </p>
+            <p className="text-xs text-red-600 dark:text-red-400/80">
+              You haven&apos;t practiced today. Your {user?.streak}-day streak will reset if you miss today!
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+            onClick={() => setView('practice')}
+          >
+            <BookOpen className="size-3.5 mr-1" />
+            Practice Now
+          </Button>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div>

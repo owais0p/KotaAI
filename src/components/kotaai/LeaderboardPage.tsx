@@ -265,7 +265,7 @@ export default function LeaderboardPage() {
         <div>
           <h1 className="text-xl font-bold md:text-2xl">Leaderboard</h1>
           <p className="text-sm text-muted-foreground">
-            Top performers this week
+            Top performers — all time
           </p>
         </div>
       </div>

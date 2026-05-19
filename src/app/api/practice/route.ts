@@ -301,37 +301,35 @@ export async function POST(request: Request) {
       });
     }
 
-    // Update leaderboard score (+10 for correct answer)
-    if (isCorrect) {
-      const currentWeek = getWeekString();
-      const leaderboardEntry = await db.leaderboardEntry.findUnique({
-        where: { userId },
-      });
+    // Update streak: increment if first practice today, check for missed days
+    const userRecord = await db.user.findUnique({ where: { id: userId } });
+    if (userRecord) {
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-      if (leaderboardEntry) {
-        await db.leaderboardEntry.update({
-          where: { userId },
-          data: {
-            score: leaderboardEntry.score + 10,
-            week: currentWeek,
-          },
-        });
-      } else {
-        await db.leaderboardEntry.create({
-          data: {
-            userId,
-            score: 10,
-            week: currentWeek,
-            rank: 0,
-          },
-        });
+      if (userRecord.lastPracticeDate !== today) {
+        // User hasn't practiced today yet
+        if (userRecord.lastPracticeDate === yesterday) {
+          // Practiced yesterday → increment streak
+          await db.user.update({
+            where: { id: userId },
+            data: { streak: userRecord.streak + 1, lastPracticeDate: today },
+          });
+        } else if (userRecord.lastPracticeDate === '') {
+          // First ever practice → streak = 1
+          await db.user.update({
+            where: { id: userId },
+            data: { streak: 1, lastPracticeDate: today },
+          });
+        } else {
+          // Missed one or more days → reset streak to 1
+          await db.user.update({
+            where: { id: userId },
+            data: { streak: 1, lastPracticeDate: today },
+          });
+        }
       }
+      // If lastPracticeDate === today, streak was already updated today, no change needed
     }
-
-    // Get current leaderboard score for response
-    const leaderboard = await db.leaderboardEntry.findUnique({
-      where: { userId },
-    });
 
     // Get updated usage
     const usage = await db.dailyUsage.findUnique({
@@ -350,7 +348,7 @@ export async function POST(request: Request) {
       correct: isCorrect,
       correctAnswer: question.correctAnswer,
       explanation: question.explanation,
-      score: leaderboard?.score || 0,
+      streak: user?.streak || 0,
       usage: {
         mcqAttempts: usage?.mcqAttempts || 0,
         mcqLimit: planLimits.mcqPerDay,
@@ -364,13 +362,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
-
-function getWeekString(): string {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const weekNumber = Math.ceil(
-    ((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7
-  );
-  return `${now.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
 }

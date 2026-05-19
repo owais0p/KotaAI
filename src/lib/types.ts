@@ -4,6 +4,8 @@ export interface User {
   name: string;
   plan: 'free' | 'pro' | 'premium';
   avatar: string;
+  streak: number;
+  lastPracticeDate: string;
 }
 
 export interface ChatMessage {

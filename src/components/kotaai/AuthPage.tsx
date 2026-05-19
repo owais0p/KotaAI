@@ -103,6 +103,8 @@ export default function AuthPage() {
         name: data.user.name,
         plan: data.user.plan,
         avatar: data.user.avatar || '',
+        streak: data.user.streak ?? 0,
+        lastPracticeDate: data.user.lastPracticeDate ?? '',
       };
 
       setUser(user);
@@ -168,6 +170,8 @@ export default function AuthPage() {
         name: data.user.name,
         plan: data.user.plan,
         avatar: data.user.avatar || '',
+        streak: data.user.streak ?? 0,
+        lastPracticeDate: data.user.lastPracticeDate ?? '',
       };
 
       // If paid plan selected, open payment modal instead of going to dashboard

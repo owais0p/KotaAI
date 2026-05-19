@@ -3,68 +3,39 @@ import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    const currentWeek = getWeekString();
-
-    // Get top 20 entries for the current week, sorted by score
-    const entries = await db.leaderboardEntry.findMany({
-      where: { week: currentWeek },
-      include: {
-        user: {
-          select: {
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-      orderBy: { score: 'desc' },
-      take: 20,
+    // Step 1: Get correct answer counts per user using groupBy
+    const correctCounts = await db.practiceAttempt.groupBy({
+      by: ['userId'],
+      where: { isCorrect: true },
+      _count: { isCorrect: true },
+      orderBy: { _count: { isCorrect: 'desc' } },
     });
 
-    // If no entries for current week, get all-time top 20
-    const leaderboard = entries.length > 0
-      ? entries
-      : await db.leaderboardEntry.findMany({
-          include: {
-            user: {
-              select: {
-                name: true,
-                avatar: true,
-              },
-            },
-          },
-          orderBy: { score: 'desc' },
-          take: 20,
-        });
+    // Step 2: Get user details for those users
+    const userIds = correctCounts.map((c) => c.userId);
+    const users = await db.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, avatar: true },
+    });
 
-    // Update ranks based on current ordering
-    const rankedLeaderboard = leaderboard.map((entry, index) => ({
-      id: entry.id,
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    // Step 3: Build leaderboard with rank
+    const leaderboard = correctCounts.map((entry, index) => ({
+      id: entry.userId,
       userId: entry.userId,
-      score: entry.score,
-      week: entry.week,
+      score: entry._count.isCorrect,
       rank: index + 1,
       user: {
-        name: entry.user.name,
-        avatar: entry.user.avatar,
+        name: userMap.get(entry.userId)?.name || 'Unknown',
+        avatar: userMap.get(entry.userId)?.avatar || '',
       },
     }));
 
-    // Update ranks in database (fire and forget)
-    for (let i = 0; i < leaderboard.length; i++) {
-      if (leaderboard[i].rank !== i + 1) {
-        db.leaderboardEntry.update({
-          where: { id: leaderboard[i].id },
-          data: { rank: i + 1 },
-        }).catch(() => {
-          // Ignore rank update errors
-        });
-      }
-    }
-
     return NextResponse.json({
       success: true,
-      leaderboard: rankedLeaderboard,
-      week: currentWeek,
+      leaderboard,
+      week: 'all-time',
     });
   } catch (error) {
     console.error('Leaderboard GET error:', error);
@@ -73,13 +44,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-
-function getWeekString(): string {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const weekNumber = Math.ceil(
-    ((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7
-  );
-  return `${now.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
 }

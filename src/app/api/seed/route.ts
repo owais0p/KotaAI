@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { createHash } from 'crypto';
-
-function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
-}
+import bcrypt from 'bcryptjs';
 
 function getWeekString(): string {
   const now = new Date();
@@ -548,7 +544,7 @@ export async function POST() {
     // 2. Create sample users with leaderboard entries
     const createdUsers: Array<{ id: string; name: string; email: string; plan: string }> = [];
     for (const u of SAMPLE_USERS) {
-      const hashedPassword = hashPassword(u.password);
+      const hashedPassword = await bcrypt.hash(u.password, 10);
       const user = await db.user.create({
         data: {
           name: u.name,

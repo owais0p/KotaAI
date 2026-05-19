@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { createHash } from 'crypto';
-
-function hashPassword(password: string): string {
-  return createHash('sha256').update(password).digest('hex');
-}
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +34,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const hashedPassword = hashPassword(password);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       const validPlans = ['free', 'pro', 'premium'];
       const userPlan = validPlans.includes(plan) ? plan : 'free';
@@ -72,6 +68,8 @@ export async function POST(request: Request) {
           name: user.name,
           plan: user.plan,
           avatar: user.avatar || '',
+          streak: user.streak,
+          lastPracticeDate: user.lastPracticeDate,
         },
       });
     }
@@ -88,9 +86,9 @@ export async function POST(request: Request) {
         );
       }
 
-      const hashedPassword = hashPassword(password);
+      const passwordMatch = await bcrypt.compare(password, user.password);
 
-      if (user.password !== hashedPassword) {
+      if (!passwordMatch) {
         return NextResponse.json(
           { success: false, error: 'Invalid email or password' },
           { status: 401 }
@@ -105,6 +103,8 @@ export async function POST(request: Request) {
           name: user.name,
           plan: user.plan,
           avatar: user.avatar || '',
+          streak: user.streak,
+          lastPracticeDate: user.lastPracticeDate,
         },
       });
     }
