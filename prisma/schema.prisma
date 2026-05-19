@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password   String
+  plan      String   @default("free")
+  avatar    String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chatMessages     ChatMessage[]
+  practiceAttempts PracticeAttempt[]
+  progressTopics   ProgressTopic[]
+  leaderboardEntry LeaderboardEntry?
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String
+  content   String
+  subject   String   @default("General")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PracticeQuestion {
+  id            String   @id @default(cuid())
+  subject       String
+  topic         String
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String
+  explanation   String
+  difficulty    String   @default("medium")
+  createdAt     DateTime @default(now())
+
+  attempts PracticeAttempt[]
+}
+
+model PracticeAttempt {
+  id              String   @id @default(cuid())
+  userId          String
+  questionId      String
+  selectedAnswer  String
+  isCorrect       Boolean
+  createdAt       DateTime @default(now())
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model ProgressTopic {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  topic     String
+  completed Boolean  @default(false)
+  score     Int      @default(0)
+  weakArea  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LeaderboardEntry {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  score     Int      @default(0)
+  week      String
+  rank      Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
