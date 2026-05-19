@@ -546,7 +546,7 @@ export async function POST() {
     }
 
     // 2. Create sample users with leaderboard entries
-    const createdUsers = [];
+    const createdUsers: Array<{ id: string; name: string; email: string; plan: string }> = [];
     for (const u of SAMPLE_USERS) {
       const hashedPassword = hashPassword(u.password);
       const user = await db.user.create({
@@ -568,7 +568,7 @@ export async function POST() {
         },
       });
 
-      createdUsers.push(user);
+      createdUsers.push({ id: user.id, name: user.name, email: user.email, plan: user.plan });
     }
 
     // 3. Create progress topics for the first user (demo purposes)

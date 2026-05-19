@@ -134,32 +134,37 @@ export async function GET(request: Request) {
       where: { subject },
     });
 
-    // If we have fewer than 50 questions for this subject, generate more
+    // If we have fewer than 50 questions for this subject, generate more in background
     if (questionCount < 50) {
-      try {
-        const generatedQuestions = await generateQuestionsViaAI(subject);
-        if (generatedQuestions.length > 0) {
-          for (const q of generatedQuestions) {
-            await db.practiceQuestion.create({
-              data: {
-                subject,
-                topic: q.topic || 'General',
-                question: q.question,
-                optionA: q.optionA,
-                optionB: q.optionB,
-                optionC: q.optionC,
-                optionD: q.optionD,
-                correctAnswer: q.correctAnswer,
-                explanation: q.explanation,
-                difficulty: q.difficulty || 'medium',
-              },
-            });
+      // Fire-and-forget background generation — don't block the response
+      generateQuestionsViaAI(subject)
+        .then(async (generatedQuestions) => {
+          if (generatedQuestions.length > 0) {
+            for (const q of generatedQuestions) {
+              try {
+                await db.practiceQuestion.create({
+                  data: {
+                    subject,
+                    topic: q.topic || 'General',
+                    question: q.question,
+                    optionA: q.optionA,
+                    optionB: q.optionB,
+                    optionC: q.optionC,
+                    optionD: q.optionD,
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation,
+                    difficulty: q.difficulty || 'medium',
+                  },
+                });
+              } catch {
+                // Skip duplicate or malformed questions
+              }
+            }
           }
-        }
-      } catch (genError) {
-        console.error('Auto-generate questions error:', genError);
-        // Continue with existing questions
-      }
+        })
+        .catch((genError) => {
+          console.error('Background question generation error:', genError);
+        });
     }
 
     // Fetch questions

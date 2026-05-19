@@ -129,7 +129,7 @@ export default function AIChat() {
 
   const { toast } = useToast();
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [limitReached, setLimitReached] = useState(false);
   const [aiUsage, setAiUsage] = useState({ used: 0, limit: 3 });
@@ -327,7 +327,7 @@ export default function AIChat() {
                   : 'border-orange-200 text-orange-600 bg-orange-50'
               }`}
             >
-              {aiUsage.used}/{aiUsage.limit} AI questions today
+              {aiUsage.used}/{aiUsage.limit === Infinity ? '∞' : aiUsage.limit} AI questions today
             </Badge>
           )}
         </div>

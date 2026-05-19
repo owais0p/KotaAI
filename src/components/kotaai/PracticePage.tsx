@@ -284,7 +284,7 @@ export default function PracticePage() {
                 : 'border-orange-200 text-orange-600 bg-orange-50'
             }`}
           >
-            {mcqUsage.used}/{mcqUsage.limit} MCQs used today
+            {mcqUsage.used}/{mcqUsage.limit === Infinity ? '∞' : mcqUsage.limit} MCQs used today
           </Badge>
         )}
       </div>

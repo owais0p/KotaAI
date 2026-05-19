@@ -71,6 +71,7 @@ export async function POST(request: Request) {
           email: user.email,
           name: user.name,
           plan: user.plan,
+          avatar: user.avatar || '',
         },
       });
     }
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
           email: user.email,
           name: user.name,
           plan: user.plan,
+          avatar: user.avatar || '',
         },
       });
     }

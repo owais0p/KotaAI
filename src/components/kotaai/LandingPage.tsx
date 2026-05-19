@@ -716,7 +716,7 @@ export default function LandingPage() {
           {/* Bottom Bar */}
           <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-sm">
-              &copy; 2024 KotaAI. All rights reserved.
+              &copy; {new Date().getFullYear()} KotaAI. All rights reserved.
             </p>
             <p className="text-xs text-gray-500">
               Made with <span className="text-orange-500">&#9829;</span> for JEE
