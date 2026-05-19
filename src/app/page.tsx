@@ -68,7 +68,7 @@ function DashboardOverview() {
         }
       })
       .catch(() => {});
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.streak, user?.lastPracticeDate, setUser]);
 
   const quickActions = [
     {
@@ -81,7 +81,7 @@ function DashboardOverview() {
     },
     {
       label: 'Daily Practice',
-      description: '10 MCQs per subject',
+      description: '50 MCQs per subject',
       icon: BookOpen,
       color: 'bg-emerald-500',
       hoverColor: 'hover:bg-emerald-600',
@@ -271,7 +271,7 @@ function DashboardOverview() {
             Unlock Unlimited Practice
           </h3>
           <p className="text-sm text-orange-100 mb-4">
-            Free plan: 5 MCQs/day & 3 AI questions/day. Upgrade for unlimited access!
+            Free plan: 10 MCQs/subject/day & 3 AI questions/day. Upgrade for unlimited access!
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button

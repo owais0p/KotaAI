@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     'space-z.ai',
     '.space-z.ai',
     'localhost',
+    'preview-chat-335d8d86-291e-4275-a0d0-1b001c43aa04.space-z.ai',
   ],
 };
 

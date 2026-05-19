@@ -99,7 +99,7 @@ export async function GET(request: Request) {
 
     const today = new Date().toISOString().split('T')[0];
     const limits = {
-      free: { mcqPerDay: 5 },
+      free: { mcqPerDay: 40 },  // 10 per subject × 4 subjects
       pro: { mcqPerDay: -1 },
       premium: { mcqPerDay: -1 },
     };
@@ -174,22 +174,35 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get user's previous attempts to filter out already answered questions
+    // Get user's previous attempts to prioritize unattempted questions
     const attemptedQuestionIds = await db.practiceAttempt.findMany({
-      where: { userId },
+      where: { userId, question: { subject } },
       select: { questionId: true },
     });
     const attemptedIds = new Set(attemptedQuestionIds.map((a) => a.questionId));
 
-    // Prefer unattempted questions
+    // Separate unattempted and previously attempted questions
     const unattempted = questions.filter((q) => !attemptedIds.has(q.id));
+    const previouslyAttempted = questions.filter((q) => attemptedIds.has(q.id));
+
+    // Shuffle the previously attempted ones so repeats feel fresh
+    const shuffledAttempted = previouslyAttempted.sort(() => Math.random() - 0.5);
 
     // Determine how many questions to return based on plan
     // Pro/Premium: up to 50 questions per session, Free: limited by daily quota
     const maxQuestions = planLimits.mcqPerDay === -1 ? 50 : Math.min(50, planLimits.mcqPerDay - usage.mcqAttempts);
-    const selectedQuestions = unattempted.length >= maxQuestions
-      ? unattempted.slice(0, maxQuestions)
-      : (unattempted.length > 0 ? unattempted : questions.slice(0, maxQuestions));
+
+    // Combine: prioritize unattempted, then fill with attempted questions if needed
+    let selectedQuestions: typeof questions = [];
+    if (unattempted.length >= maxQuestions) {
+      selectedQuestions = unattempted.slice(0, maxQuestions);
+    } else {
+      // Use all unattempted + fill remaining from previously attempted (re-practice)
+      selectedQuestions = [
+        ...unattempted,
+        ...shuffledAttempted.slice(0, maxQuestions - unattempted.length),
+      ].slice(0, maxQuestions);
+    }
 
     // Return questions without correctAnswer
     const safeQuestions = selectedQuestions.map((q) => ({
@@ -339,7 +352,7 @@ export async function POST(request: Request) {
     });
     const user = await db.user.findUnique({ where: { id: userId } });
     const limits = {
-      free: { mcqPerDay: 5 },
+      free: { mcqPerDay: 40 },  // 10 per subject × 4 subjects
       pro: { mcqPerDay: -1 },
       premium: { mcqPerDay: -1 },
     };

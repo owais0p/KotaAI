@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
     // Define limits based on plan
     const limits = {
-      free: { mcqPerDay: 5, aiQuestionsPerDay: 3 },
+      free: { mcqPerDay: 40, aiQuestionsPerDay: 3 },  // 10 MCQs per subject × 4 subjects
       pro: { mcqPerDay: -1, aiQuestionsPerDay: -1 },  // unlimited
       premium: { mcqPerDay: -1, aiQuestionsPerDay: -1 }, // unlimited
     };
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
 
     // Check limits first
     const limits = {
-      free: { mcqPerDay: 5, aiQuestionsPerDay: 3 },
+      free: { mcqPerDay: 40, aiQuestionsPerDay: 3 },
       pro: { mcqPerDay: -1, aiQuestionsPerDay: -1 },
       premium: { mcqPerDay: -1, aiQuestionsPerDay: -1 },
     };
