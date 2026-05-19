@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   keywords: ["KotaAI", "JEE", "NEET", "AI Tutor", "Exam Preparation", "Physics", "Chemistry", "Maths", "Biology"],
   authors: [{ name: "KotaAI Team" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.png",
   },
   openGraph: {
     title: "KotaAI — Your 24/7 JEE & NEET Tutor",

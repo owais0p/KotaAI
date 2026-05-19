@@ -12,6 +12,7 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
 import {
   Brain,
   BookOpen,
@@ -177,9 +178,14 @@ export default function LandingPage() {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-orange-500 text-white font-bold text-lg">
-                K
-              </div>
+              <Image
+                src="/logo.png"
+                alt="KotaAI Logo"
+                width={36}
+                height={36}
+                className="rounded-lg"
+                priority
+              />
               <span className="text-xl font-bold text-gray-900">
                 Kota<span className="text-orange-500">AI</span>
               </span>
@@ -534,9 +540,13 @@ export default function LandingPage() {
             {/* Brand Column */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-orange-500 text-white font-bold text-lg">
-                  K
-                </div>
+                <Image
+                  src="/logo.png"
+                  alt="KotaAI Logo"
+                  width={36}
+                  height={36}
+                  className="rounded-lg"
+                />
                 <span className="text-xl font-bold text-white">
                   Kota<span className="text-orange-500">AI</span>
                 </span>

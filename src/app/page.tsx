@@ -12,6 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import Image from 'next/image';
 import {
   MessageSquare,
   BookOpen,
@@ -254,9 +255,14 @@ function DashboardShell() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-5 border-b">
-        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-orange-500 text-white font-bold text-lg">
-          K
-        </div>
+        <Image
+          src="/logo.png"
+          alt="KotaAI Logo"
+          width={36}
+          height={36}
+          className="rounded-lg"
+          priority
+        />
         <div>
           <span className="text-lg font-bold">
             Kota<span className="text-orange-500">AI</span>
@@ -432,9 +438,14 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-orange-500 text-white font-bold text-xl animate-pulse">
-            K
-          </div>
+          <Image
+            src="/logo.png"
+            alt="KotaAI Logo"
+            width={48}
+            height={48}
+            className="rounded-xl animate-pulse"
+            priority
+          />
           <p className="text-sm text-muted-foreground">Loading KotaAI...</p>
         </div>
       </div>

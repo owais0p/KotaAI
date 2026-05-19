@@ -19,7 +19,8 @@ import {
   TabsTrigger,
 } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Mail, Lock, User, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, User } from 'lucide-react';
+import Image from 'next/image';
 import type { User as UserType } from '@/lib/types';
 
 type Plan = 'free' | 'pro' | 'premium';
@@ -188,9 +189,14 @@ export default function AuthPage() {
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-6">
-          <div className="size-14 rounded-2xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/25 mb-3">
-            <GraduationCap className="size-8 text-white" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="KotaAI Logo"
+            width={56}
+            height={56}
+            className="rounded-2xl shadow-lg shadow-orange-500/25 mb-3"
+            priority
+          />
           <h1 className="text-2xl font-bold text-gray-900">KotaAI</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Your AI-Powered Tutor
