@@ -1,29 +1,23 @@
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Fix preview panel not working + MCQ limit bug
+Task: Audit and fix KotaAI web app code for local download and run
 
 Work Log:
-- Diagnosed that the dev server process was not running (port 3000 not in use)
-- Restarted the dev server multiple times - discovered it was crashing after requests
-- Server needs `nohup` and `disown` to persist in background
-- Eventually got server running stably with `nohup node node_modules/.bin/next dev -p 3000`
-
-- Investigated MCQ limit bug: user reported only 10 MCQs per subject instead of 50
-- Root cause 1: Free plan limit was only 5 MCQs/day (too restrictive)
-- Root cause 2: Practice API filtered out already-attempted questions, so users who practiced before would see fewer questions
-- Fixed practice API to include previously attempted questions (shuffled) to fill quota when unattempted ones run out
-- Also scoped the attempt tracking to per-subject (was tracking all subjects globally)
-
-- Increased free plan MCQ limit from 5 to 40 per day (10 per subject × 4 subjects)
-- Updated usage API limits to match (40 for free, -1 for pro/premium)
-- Updated dashboard descriptions: "50 MCQs per subject" for practice action, "10 MCQs/subject/day" for free plan CTA
-- Fixed lint warning (unused eslint-disable directive)
-- Added cross-origin preview domain to allowedDevOrigins in next.config.ts
+- Reviewed all source files (page.tsx, layout.tsx, store.ts, types.ts, db.ts, all API routes, all components)
+- Ran lint check - only error was in example websocket file, not main app
+- Ran production build - compiled successfully with zero errors
+- Fixed payment route crash: `new Razorpay()` at module level would crash with placeholder keys. Changed to lazy-loaded `getRazorpayInstance()` function with graceful dev-mode fallback that directly upgrades users when Razorpay is not configured
+- Fixed inconsistent free plan descriptions: LandingPage said "5 MCQs per day" and AuthPage said "5 MCQs/day" but actual limit is 40/day. Updated both to show correct limits
+- Also fixed Free plan showing "1 subject access" when all 4 subjects are actually available on free plan
+- Cleaned up next.config.ts: removed sandbox-specific preview domain from allowedDevOrigins
+- Created .env.example file for local setup instructions
+- Verified: `npx eslint src/` passes with zero errors
+- Verified: `npx next build` compiles successfully
 
 Stage Summary:
-- Dev server is running on port 3000 and returning 200
-- Pro/Premium users now get all 50 questions per subject
-- Free users get 40 questions per day (10 per subject)
-- Previously attempted questions are now recycled (shuffled) to fill quotas
-- All API endpoints verified working via curl tests
+- All 3 critical fixes applied: payment route safety, limit display consistency, config cleanup
+- App compiles cleanly for both dev and production builds
+- No code errors in the main src/ directory
+- Questions.json has 200 MCQs (50 per subject: Physics, Chemistry, Maths, Biology)
+- Database schema is complete with all models (User, ChatMessage, PracticeQuestion, PracticeAttempt, ProgressTopic, LeaderboardEntry, DailyUsage, Payment)

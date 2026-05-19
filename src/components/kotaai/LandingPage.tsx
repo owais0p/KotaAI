@@ -203,8 +203,8 @@ const plans = [
     description: 'Get started with basic features',
     features: [
       { text: '3 AI questions per day', included: true },
-      { text: '5 MCQs per day', included: true },
-      { text: '1 subject access', included: true },
+      { text: '40 MCQs per day (10 per subject)', included: true },
+      { text: 'All 4 subjects access', included: true },
       { text: 'Basic progress tracking', included: true },
       { text: 'Unlimited practice', included: false },
     ],

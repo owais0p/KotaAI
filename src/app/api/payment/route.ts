@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createHmac } from 'crypto';
-import Razorpay from 'razorpay';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+function getRazorpayInstance() {
+  // Lazy-load Razorpay to avoid crashes if keys are not configured
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret || keyId === 'rzp_test_placeholder') {
+    return null;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Razorpay = require('razorpay');
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
 
 // Razorpay order creation
 export async function POST(request: Request) {
@@ -34,6 +40,44 @@ export async function POST(request: Request) {
         { success: false, error: 'User not found' },
         { status: 404 }
       );
+    }
+
+    const razorpay = getRazorpayInstance();
+
+    // If Razorpay is not configured, directly upgrade the user (for local dev/testing)
+    if (!razorpay) {
+      console.warn('Razorpay not configured — upgrading user directly for local dev');
+      const updatedUser = await db.user.update({
+        where: { id: userId },
+        data: { plan },
+      });
+
+      await db.payment.create({
+        data: {
+          userId,
+          plan,
+          amount: plan === 'pro' ? 29900 : 69900,
+          currency: 'INR',
+          razorpayOrderId: `dev_${Date.now()}`,
+          razorpayPaymentId: `dev_paid_${Date.now()}`,
+          status: 'paid',
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          name: updatedUser.name,
+          plan: updatedUser.plan,
+          avatar: updatedUser.avatar,
+          streak: updatedUser.streak,
+          lastPracticeDate: updatedUser.lastPracticeDate,
+        },
+        devMode: true,
+        message: 'Razorpay not configured. User upgraded directly (dev mode).',
+      });
     }
 
     const amount = plan === 'pro' ? 29900 : 69900; // in paise
@@ -88,9 +132,17 @@ export async function PUT(request: Request) {
       );
     }
 
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret || keySecret === 'placeholder_secret') {
+      return NextResponse.json(
+        { success: false, error: 'Razorpay not configured' },
+        { status: 500 }
+      );
+    }
+
     // Verify signature
     const sigBody = `${razorpayOrderId}|${razorpayPaymentId}`;
-    const expectedSignature = createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+    const expectedSignature = createHmac('sha256', keySecret)
       .update(sigBody)
       .digest('hex');
 

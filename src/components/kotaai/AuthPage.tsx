@@ -31,7 +31,7 @@ const plans: { value: Plan; label: string; price: string; description: string }[
     value: 'free',
     label: 'Free',
     price: '₹0',
-    description: '5 MCQs/day, 3 AI Qs/day',
+    description: '40 MCQs/day, 3 AI Qs/day',
   },
   {
     value: 'pro',
