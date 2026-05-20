@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import ZAI from 'z-ai-web-dev-sdk';
+import Groq from 'groq-sdk';
 
 export async function POST(request: Request) {
   try {
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     });
 
     // Build messages array for AI
-    const systemPrompt = `You are KotaAI, an expert AI tutor specializing in JEE and NEET exam preparation for ${subject}. Provide step-by-step explanations. Use clear formatting with steps numbered. Include relevant formulas and concepts. Be encouraging and thorough. Format your responses with markdown for clarity. Use **bold** for key terms and formulas. Use bullet points for lists. If solving a numerical problem, clearly show each step with units.`;
+    const systemPrompt = 'You are an expert JEE and NEET tutor. Give clear step-by-step explanations. Use simple language suitable for Indian students.';
 
     const messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }> = [
       { role: 'system', content: systemPrompt },
@@ -94,11 +94,13 @@ export async function POST(request: Request) {
     // Add current user message
     messages.push({ role: 'user', content: message });
 
-    // Call AI using z-ai-web-dev-sdk
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
+    // Call AI using groq-sdk
+    const groq = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+    const completion = await groq.chat.completions.create({
       messages,
-      thinking: { type: 'disabled' },
+      model: 'llama-3.3-70b-versatile',
     });
 
     const aiResponse = completion.choices[0]?.message?.content || 'I apologize, I could not generate a response. Please try again.';

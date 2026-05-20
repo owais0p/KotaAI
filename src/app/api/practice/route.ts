@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import Groq from 'groq-sdk';
 
 const VALID_SUBJECTS = ['Physics', 'Chemistry', 'Maths', 'Biology'];
 
@@ -16,8 +17,9 @@ interface GeneratedQuestion {
 }
 
 async function generateQuestionsViaAI(subject: string): Promise<GeneratedQuestion[]> {
-  const ZAI = (await import('z-ai-web-dev-sdk')).default;
-  const zai = await ZAI.create();
+  const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+  });
 
   const prompt = `Generate exactly 10 multiple-choice questions for JEE/NEET exam preparation in ${subject}. Each question must have 4 options (A, B, C, D) and exactly one correct answer.
 
@@ -37,15 +39,15 @@ Example format:
 
 Generate 10 questions now:`;
 
-  const completion = await zai.chat.completions.create({
+  const completion = await groq.chat.completions.create({
     messages: [
       {
-        role: 'assistant',
+        role: 'system',
         content: `You are a JEE/NEET question generator. You only output valid JSON arrays. No markdown, no explanation outside JSON.`,
       },
       { role: 'user', content: prompt },
     ],
-    thinking: { type: 'disabled' },
+    model: 'llama-3.3-70b-versatile',
   });
 
   const content = completion.choices[0]?.message?.content || '[]';

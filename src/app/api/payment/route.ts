@@ -44,40 +44,12 @@ export async function POST(request: Request) {
 
     const razorpay = getRazorpayInstance();
 
-    // If Razorpay is not configured, directly upgrade the user (for local dev/testing)
+    // If Razorpay is not configured, show "Payment coming soon" gracefully
     if (!razorpay) {
-      console.warn('Razorpay not configured — upgrading user directly for local dev');
-      const updatedUser = await db.user.update({
-        where: { id: userId },
-        data: { plan },
-      });
-
-      await db.payment.create({
-        data: {
-          userId,
-          plan,
-          amount: plan === 'pro' ? 29900 : 69900,
-          currency: 'INR',
-          razorpayOrderId: `dev_${Date.now()}`,
-          razorpayPaymentId: `dev_paid_${Date.now()}`,
-          status: 'paid',
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: updatedUser.id,
-          email: updatedUser.email,
-          name: updatedUser.name,
-          plan: updatedUser.plan,
-          avatar: updatedUser.avatar,
-          streak: updatedUser.streak,
-          lastPracticeDate: updatedUser.lastPracticeDate,
-        },
-        devMode: true,
-        message: 'Razorpay not configured. User upgraded directly (dev mode).',
-      });
+      return NextResponse.json(
+        { success: false, error: 'Payment coming soon' },
+        { status: 400 }
+      );
     }
 
     const amount = plan === 'pro' ? 29900 : 69900; // in paise

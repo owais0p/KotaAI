@@ -80,6 +80,8 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
 
   const planDetail = PLAN_DETAILS[plan] ?? PLAN_DETAILS.pro;
 
+  const isPaymentAvailable = !!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID && process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID !== 'rzp_test_placeholder';
+
   const handlePayment = async () => {
     if (!user?.id) return;
     setStep('checkout');
@@ -229,12 +231,18 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
               </div>
 
               {/* Pay button */}
-              <Button
-                className={`w-full h-12 text-base font-semibold ${planDetail.buttonClass}`}
-                onClick={handlePayment}
-              >
-                Pay {planDetail.price} {planDetail.priceNote}
-              </Button>
+              {isPaymentAvailable ? (
+                <Button
+                  className={`w-full h-12 text-base font-semibold ${planDetail.buttonClass}`}
+                  onClick={handlePayment}
+                >
+                  Pay {planDetail.price} {planDetail.priceNote}
+                </Button>
+              ) : (
+                <div className="w-full text-center p-3.5 bg-orange-50 border border-orange-200 rounded-xl text-orange-700 font-semibold shadow-sm">
+                  Payment coming soon
+                </div>
+              )}
             </div>
           </>
         )}
