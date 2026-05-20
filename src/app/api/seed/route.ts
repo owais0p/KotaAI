@@ -31,18 +31,8 @@ const TOPICS_BY_SUBJECT: Record<string, string[]> = {
 
 export async function POST() {
   try {
-    // Check if data already exists
-    const existingQuestions = await db.practiceQuestion.count();
-    if (existingQuestions > 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'Database already seeded. Skipping to prevent duplicates.',
-        stats: {
-          questions: existingQuestions,
-          users: await db.user.count(),
-        },
-      });
-    }
+    // Always clear existing practice questions to prevent duplicates and refresh with updated list
+    await db.practiceQuestion.deleteMany({});
 
     const currentWeek = getWeekString();
 
@@ -57,29 +47,31 @@ export async function POST() {
       });
     }
 
-    // 2. Create sample users with leaderboard entries
+    // 2. Create sample users with leaderboard entries if they do not exist
     const createdUsers: Array<{ id: string; name: string; email: string; plan: string }> = [];
     for (const u of SAMPLE_USERS) {
-      const hashedPassword = await bcrypt.hash(u.password, 10);
-      const user = await db.user.create({
-        data: {
-          name: u.name,
-          email: u.email,
-          password: hashedPassword,
-          plan: u.plan,
-          avatar: '',
-        },
-      });
+      let user = await db.user.findUnique({ where: { email: u.email } });
+      if (!user) {
+        const hashedPassword = await bcrypt.hash(u.password, 10);
+        user = await db.user.create({
+          data: {
+            name: u.name,
+            email: u.email,
+            password: hashedPassword,
+            plan: u.plan,
+            avatar: '',
+          },
+        });
 
-      await db.leaderboardEntry.create({
-        data: {
-          userId: user.id,
-          score: u.score,
-          week: currentWeek,
-          rank: 0,
-        },
-      });
-
+        await db.leaderboardEntry.create({
+          data: {
+            userId: user.id,
+            score: u.score,
+            week: currentWeek,
+            rank: 0,
+          },
+        });
+      }
       createdUsers.push({ id: user.id, name: user.name, email: user.email, plan: user.plan });
     }
 

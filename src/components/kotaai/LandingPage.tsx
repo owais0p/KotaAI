@@ -47,7 +47,7 @@ const features = [
   {
     icon: BookOpen,
     title: 'Daily Practice',
-    description: '10 MCQs per subject, every day',
+    description: '10 MCQs every day',
     color: 'text-amber-500',
     bg: 'bg-amber-50',
   },
@@ -203,7 +203,7 @@ const plans = [
     description: 'Get started with basic features',
     features: [
       { text: '3 AI questions per day', included: true },
-      { text: '40 MCQs per day (10 per subject)', included: true },
+      { text: '10 MCQs per day', included: true },
       { text: 'All 4 subjects access', included: true },
       { text: 'Basic progress tracking', included: true },
       { text: 'Unlimited practice', included: false },

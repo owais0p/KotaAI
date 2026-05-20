@@ -64,7 +64,7 @@ export default function PracticePage() {
 
   // ── Limit state ──
   const [limitReached, setLimitReached] = useState(false);
-  const [mcqUsage, setMcqUsage] = useState({ used: 0, limit: 5 });
+  const [mcqUsage, setMcqUsage] = useState({ used: 0, limit: 10 });
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<'pro' | 'premium'>('pro');
 
@@ -458,8 +458,7 @@ export default function PracticePage() {
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="border-white text-white hover:bg-white/10"
+                    className="bg-transparent border-2 border-white text-white hover:bg-white/20 font-semibold"
                     onClick={() => handleUpgrade('premium')}
                   >
                     Premium ₹699/mo

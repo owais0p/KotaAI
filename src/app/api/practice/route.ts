@@ -101,7 +101,7 @@ export async function GET(request: Request) {
 
     const today = new Date().toISOString().split('T')[0];
     const limits = {
-      free: { mcqPerDay: 40 },  // 10 per subject × 4 subjects
+      free: { mcqPerDay: 10 },
       pro: { mcqPerDay: -1 },
       premium: { mcqPerDay: -1 },
     };
@@ -354,7 +354,7 @@ export async function POST(request: Request) {
     });
     const user = await db.user.findUnique({ where: { id: userId } });
     const limits = {
-      free: { mcqPerDay: 40 },  // 10 per subject × 4 subjects
+      free: { mcqPerDay: 10 },
       pro: { mcqPerDay: -1 },
       premium: { mcqPerDay: -1 },
     };
