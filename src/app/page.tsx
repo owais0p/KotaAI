@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, useRef } from 'react';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -28,6 +28,7 @@ import {
   Flame,
   AlertTriangle,
 } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, animate } from 'framer-motion';
 
 import LandingPage from '@/components/kotaai/LandingPage';
 import AuthPage from '@/components/kotaai/AuthPage';
@@ -36,6 +37,150 @@ import PracticePage from '@/components/kotaai/PracticePage';
 import ProgressPage from '@/components/kotaai/ProgressPage';
 import LeaderboardPage from '@/components/kotaai/LeaderboardPage';
 import PaymentModal from '@/components/kotaai/PaymentModal';
+
+/* ─── 3D Tilt Subject Card Component ─── */
+function SubjectCard3D({
+  children,
+  onClick,
+  className,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  className: string;
+}) {
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [10, -10]), { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), { stiffness: 200, damping: 20 });
+  const scale = useSpring(1, { stiffness: 200, damping: 20 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) / rect.width - 0.5;
+    const mouseY = (e.clientY - rect.top) / rect.height - 0.5;
+    x.set(mouseX);
+    y.set(mouseY);
+  };
+
+  const handleMouseEnter = () => scale.set(1.04);
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+    scale.set(1);
+  };
+
+  return (
+    <motion.button
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      style={{
+        rotateX,
+        rotateY,
+        scale,
+        transformStyle: 'preserve-3d',
+      }}
+      className={className}
+    >
+      <div style={{ transform: 'translateZ(15px)' }} className="flex flex-col items-center gap-2 w-full h-full">
+        {children}
+      </div>
+    </motion.button>
+  );
+}
+
+/* ─── Animated Streak Flame Component ─── */
+function StreakFlame({ streak, streakAtRisk }: { streak: number; streakAtRisk: boolean }) {
+  const particles = [0, 1, 2];
+  return (
+    <Badge
+      className={`gap-1 font-bold relative overflow-hidden ${
+        streakAtRisk
+          ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800'
+          : 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800'
+      }`}
+    >
+      <div className="relative flex items-center justify-center mr-1">
+        {particles.map((i) => (
+          <motion.span
+            key={i}
+            className={`absolute rounded-full pointer-events-none ${
+              streakAtRisk ? 'bg-red-500' : 'bg-orange-500'
+            }`}
+            style={{ width: 3, height: 3, bottom: 2 }}
+            animate={{
+              y: [0, -14],
+              x: [0, (i % 2 === 0 ? 3 : -3), (i % 2 === 0 ? -1 : 1)],
+              opacity: [0, 1, 0],
+              scale: [0.5, 1.2, 0.2],
+            }}
+            transition={{
+              duration: 1.0 + i * 0.25,
+              repeat: Infinity,
+              delay: i * 0.3,
+              ease: 'easeOut',
+            }}
+          />
+        ))}
+        <motion.div
+          animate={{
+            scale: [1, 1.15, 0.95, 1.1, 1],
+            rotate: [0, -3, 3, -1, 0],
+          }}
+          transition={{
+            duration: 1.2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        >
+          <Flame className={`size-3.5 ${streakAtRisk ? 'text-red-500' : 'text-orange-500'} fill-current`} />
+        </motion.div>
+      </div>
+      <span>{streak} day{streak !== 1 ? 's' : ''}</span>
+    </Badge>
+  );
+}
+
+/* ─── Animated Number Counter Component ─── */
+function DashboardCounter({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const numericMatch = value.match(/^(\d+)/);
+  const numericValue = numericMatch ? parseInt(numericMatch[1]) : null;
+  const suffix = numericMatch ? value.substring(numericMatch[1].length) : value;
+
+  useEffect(() => {
+    if (numericValue === null) {
+      if (ref.current) ref.current.textContent = value;
+      return;
+    }
+    const node = ref.current;
+    if (!node) return;
+    const controls = animate(0, numericValue, {
+      duration: 1.5,
+      ease: 'easeOut',
+      onUpdate(latest) {
+        node.textContent = Math.round(latest).toLocaleString('en-IN');
+      },
+    });
+    return () => controls.stop();
+  }, [value, numericValue]);
+
+  if (numericValue === null) {
+    return <span>{value}</span>;
+  }
+
+  return (
+    <span>
+      <span ref={ref}>0</span>
+      {suffix}
+    </span>
+  );
+}
 
 /* ───────── Navigation Items ───────── */
 const NAV_ITEMS = [
@@ -118,10 +263,35 @@ function DashboardOverview() {
     ? { label: 'Pro', class: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800' }
     : { label: 'Free', class: 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700' };
 
+  // Stagger entrance animations
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: 100, damping: 15 },
+    },
+  };
+
   return (
-    <div className="space-y-8 p-4 md:p-6 max-w-4xl mx-auto">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8 p-4 md:p-6 max-w-4xl mx-auto"
+    >
       {/* Welcome Section */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Avatar className="size-14 ring-2 ring-orange-200 dark:ring-orange-800">
           <AvatarFallback className="bg-orange-500 text-white text-xl font-bold">
             {user?.name?.charAt(0)?.toUpperCase() || 'S'}
@@ -135,27 +305,21 @@ function DashboardOverview() {
             </Badge>
             {/* Streak Badge */}
             {(user?.streak ?? 0) > 0 && (
-              <Badge
-                className={`gap-1 font-bold ${
-                  streakAtRisk
-                    ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 animate-pulse'
-                    : 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800'
-                }`}
-              >
-                <Flame className={`size-3.5 ${streakAtRisk ? 'text-red-500' : 'text-orange-500'}`} />
-                {user?.streak} day{user?.streak !== 1 ? 's' : ''}
-              </Badge>
+              <StreakFlame streak={user?.streak ?? 0} streakAtRisk={streakAtRisk} />
             )}
           </div>
           <p className="text-muted-foreground text-sm mt-1">
             Ready to crack JEE & NEET? Let&apos;s continue your preparation.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Streak at Risk Warning */}
       {streakAtRisk && (user?.streak ?? 0) > 0 && (
-        <div className="flex items-center gap-3 rounded-xl border-2 border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20 p-4">
+        <motion.div
+          variants={itemVariants}
+          className="flex items-center gap-3 rounded-xl border-2 border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20 p-4"
+        >
           <div className="flex items-center justify-center size-10 rounded-full bg-red-100 dark:bg-red-950/50 shrink-0">
             <AlertTriangle className="size-5 text-red-600 dark:text-red-400" />
           </div>
@@ -175,21 +339,23 @@ function DashboardOverview() {
             <BookOpen className="size-3.5 mr-1" />
             Practice Now
           </Button>
-        </div>
+        </motion.div>
       )}
 
       {/* Quick Actions */}
-      <div>
+      <motion.div variants={itemVariants}>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Zap className="size-5 text-orange-500" />
           Quick Actions
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {quickActions.map((action) => (
-            <button
+            <motion.button
               key={action.label}
               onClick={() => setView(action.view)}
-              className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border p-5 hover:border-orange-300 hover:bg-orange-50/50 dark:hover:border-orange-800 dark:hover:bg-orange-950/20 transition-all group"
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border p-5 hover:border-orange-300 hover:bg-orange-50/50 dark:hover:border-orange-800 dark:hover:bg-orange-950/20 transition-all group w-full"
             >
               <div className={`flex size-12 items-center justify-center rounded-xl ${action.color} ${action.hoverColor} text-white shadow-lg transition-colors`}>
                 <action.icon className="size-6" />
@@ -202,57 +368,57 @@ function DashboardOverview() {
                   {action.description}
                 </p>
               </div>
-            </button>
+            </motion.button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Subjects Grid */}
-      <div>
+      <motion.div variants={itemVariants}>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <GraduationCap className="size-5 text-orange-500" />
           Subjects
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {subjects.map((subject) => (
-            <button
+            <SubjectCard3D
               key={subject.name}
               onClick={() => {
                 setSelectedSubject(subject.name as 'Physics' | 'Chemistry' | 'Maths' | 'Biology');
                 setView('practice');
               }}
-              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-5 transition-all hover:shadow-md ${subject.color}`}
+              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-5 transition-all hover:shadow-lg ${subject.color} w-full h-full`}
             >
               <span className="text-3xl">{subject.emoji}</span>
               <span className="text-sm font-semibold">{subject.name}</span>
               <span className="text-xs text-muted-foreground">{subject.count}</span>
-              <ChevronRight className="size-4 text-muted-foreground" />
-            </button>
+              <ChevronRight className="size-4 text-muted-foreground mt-auto" />
+            </SubjectCard3D>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-xl border bg-card p-4 text-center">
           <div className="flex items-center justify-center size-10 rounded-lg bg-orange-100 dark:bg-orange-950/50 mx-auto mb-2">
             <MessageSquare className="size-5 text-orange-600 dark:text-orange-400" />
           </div>
-          <p className="text-2xl font-bold">24/7</p>
+          <p className="text-2xl font-bold"><DashboardCounter value="24/7" /></p>
           <p className="text-xs text-muted-foreground">AI Tutor</p>
         </div>
         <div className="rounded-xl border bg-card p-4 text-center">
           <div className="flex items-center justify-center size-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 mx-auto mb-2">
             <BookOpen className="size-5 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <p className="text-2xl font-bold">200+</p>
+          <p className="text-2xl font-bold"><DashboardCounter value="200+" /></p>
           <p className="text-xs text-muted-foreground">MCQ Bank</p>
         </div>
         <div className="rounded-xl border bg-card p-4 text-center">
           <div className="flex items-center justify-center size-10 rounded-lg bg-purple-100 dark:bg-purple-950/50 mx-auto mb-2">
             <BarChart3 className="size-5 text-purple-600 dark:text-purple-400" />
           </div>
-          <p className="text-2xl font-bold">4</p>
+          <p className="text-2xl font-bold"><DashboardCounter value="4" /></p>
           <p className="text-xs text-muted-foreground">Subjects</p>
         </div>
         <div className="rounded-xl border bg-card p-4 text-center">
@@ -262,51 +428,53 @@ function DashboardOverview() {
           <p className="text-2xl font-bold">AI</p>
           <p className="text-xs text-muted-foreground">Powered</p>
         </div>
-      </div>
+      </motion.div>
 
       {/* CTA Banner - Free users: Upgrade prompt, Paid users: Practice prompt */}
-      {user?.plan === 'free' ? (
-        <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
-          <h3 className="text-lg font-bold mb-1">
-            Unlock Unlimited Practice
-          </h3>
-          <p className="text-sm text-orange-100 mb-4">
-            Free plan: 10 MCQs/subject/day & 3 AI questions/day. Upgrade for unlimited access!
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <motion.div variants={itemVariants}>
+        {user?.plan === 'free' ? (
+          <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
+            <h3 className="text-lg font-bold mb-1">
+              Unlock Unlimited Practice
+            </h3>
+            <p className="text-sm text-orange-100 mb-4">
+              Free plan: 10 MCQs/subject/day & 3 AI questions/day. Upgrade for unlimited access!
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => { setUpgradePlan('pro'); setUpgradeModalOpen(true); }}
+                className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
+              >
+                <Zap className="size-4 mr-2" />
+                Upgrade to Pro — ₹299/mo
+              </Button>
+              <Button
+                onClick={() => { setUpgradePlan('premium'); setUpgradeModalOpen(true); }}
+                className="bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold shadow-lg border border-amber-300"
+              >
+                <Sparkles className="size-4 mr-2" />
+                Premium — ₹699/mo
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
+            <h3 className="text-lg font-bold mb-1">
+              Start Today&apos;s Practice Session
+            </h3>
+            <p className="text-sm text-orange-100 mb-4">
+              Complete your daily MCQs and climb the leaderboard!
+            </p>
             <Button
-              onClick={() => { setUpgradePlan('pro'); setUpgradeModalOpen(true); }}
+              onClick={() => setView('practice')}
               className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
             >
-              <Zap className="size-4 mr-2" />
-              Upgrade to Pro — ₹299/mo
-            </Button>
-            <Button
-              onClick={() => { setUpgradePlan('premium'); setUpgradeModalOpen(true); }}
-              className="bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold shadow-lg border border-amber-300"
-            >
-              <Sparkles className="size-4 mr-2" />
-              Premium — ₹699/mo
+              <BookOpen className="size-4 mr-2" />
+              Start Practicing
             </Button>
           </div>
-        </div>
-      ) : (
-        <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
-          <h3 className="text-lg font-bold mb-1">
-            Start Today&apos;s Practice Session
-          </h3>
-          <p className="text-sm text-orange-100 mb-4">
-            Complete your daily MCQs and climb the leaderboard!
-          </p>
-          <Button
-            onClick={() => setView('practice')}
-            className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
-          >
-            <BookOpen className="size-4 mr-2" />
-            Start Practicing
-          </Button>
-        </div>
-      )}
+        )}
+      </motion.div>
 
       {/* Payment Modal */}
       <PaymentModal
@@ -314,7 +482,7 @@ function DashboardOverview() {
         onOpenChange={setUpgradeModalOpen}
         plan={upgradePlan}
       />
-    </div>
+    </motion.div>
   );
 }
 
@@ -375,9 +543,11 @@ function DashboardShell() {
         {NAV_ITEMS.map((item) => {
           const isActive = currentView === item.id;
           return (
-            <button
+            <motion.button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               className={`
                 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                 ${
@@ -392,7 +562,7 @@ function DashboardShell() {
               {isActive && (
                 <div className="ml-auto size-1.5 rounded-full bg-orange-500" />
               )}
-            </button>
+            </motion.button>
           );
         })}
       </nav>
@@ -510,8 +680,19 @@ function DashboardShell() {
         </header>
 
         {/* ── Content ── */}
-        <main className={`flex-1 min-h-0 ${currentView === 'chat' ? 'flex flex-col' : 'overflow-y-auto custom-scrollbar'}`}>
-          {renderContent()}
+        <main className={`flex-1 min-h-0 ${currentView === 'chat' ? 'flex flex-col' : 'overflow-y-auto custom-scrollbar'} relative`}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              className={currentView === 'chat' ? 'flex flex-col flex-1 h-full' : 'w-full h-full'}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

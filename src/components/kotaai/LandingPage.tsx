@@ -31,6 +31,7 @@ import {
   Sparkles,
   ChevronRight,
 } from 'lucide-react';
+import { motion, useInView, animate } from 'framer-motion';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -88,39 +89,29 @@ const stats = [
   { target: 4, suffix: '', label: 'Subjects', icon: GraduationCap },
 ];
 
-/* ─── Animated Counter Hook ─── */
-function useCountUp(target: number, duration = 2800, started: boolean) {
-  const [count, setCount] = useState(0);
-  const rafRef = useRef<number>(0);
+/* ─── Animated Counter Component with Framer Motion ─── */
+function Counter({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-50px" });
 
   useEffect(() => {
-    if (!started) return;
+    if (inView) {
+      const node = ref.current;
+      if (!node) return;
 
-    const startTime = performance.now();
+      const controls = animate(0, value, {
+        duration: 2,
+        ease: "easeOut",
+        onUpdate(latest) {
+          node.textContent = Math.round(latest).toLocaleString('en-IN');
+        },
+      });
 
-    function step(now: number) {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Smooth ease-out expo — very gentle deceleration
-      const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-
-      // Use floor for sub-1 increments so small targets (like 4) still step 0→1→2→3→4
-      const raw = eased * target;
-      const next = progress >= 1 ? target : Math.round(raw);
-
-      setCount(next);
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      }
+      return () => controls.stop();
     }
+  }, [inView, value]);
 
-    rafRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [target, duration, started]);
-
-  return started ? count : 0;
+  return <span ref={ref}>0</span>;
 }
 
 /* ─── Animated Stat Card ─── */
@@ -129,58 +120,31 @@ function AnimatedStatCard({
   suffix,
   label,
   icon: Icon,
-  started,
 }: {
   target: number;
   suffix: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  started: boolean;
 }) {
-  const count = useCountUp(target, 2000, started);
-
-  const formatNumber = (n: number) => {
-    if (n >= 1000) {
-      return n.toLocaleString('en-IN');
-    }
-    return n.toString();
-  };
-
   return (
-    <div className="flex flex-col items-center p-4 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-orange-100/80 shadow-sm transition-transform duration-300 hover:scale-105">
+    <motion.div 
+      whileHover={{ y: -6, scale: 1.05 }}
+      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+      className="flex flex-col items-center p-4 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-orange-100/80 shadow-sm"
+    >
       <Icon className="size-6 text-orange-500 mb-2" />
       <span className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
-        {formatNumber(count)}{suffix}
+        <Counter value={target} />{suffix}
       </span>
       <span className="text-sm text-gray-500 mt-1">{label}</span>
-    </div>
+    </motion.div>
   );
 }
 
 /* ─── Scroll-triggered Stats Row ─── */
 function AnimatedStatsRow() {
-  const [started, setStarted] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const onIntersect = useCallback((entries: IntersectionObserverEntry[]) => {
-    if (entries[0]?.isIntersecting) {
-      setStarted(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(onIntersect, { threshold: 0.3 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [onIntersect]);
-
   return (
-    <div
-      ref={ref}
-      className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto"
-    >
+    <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 max-w-3xl mx-auto">
       {stats.map((stat) => (
         <AnimatedStatCard
           key={stat.label}
@@ -188,7 +152,6 @@ function AnimatedStatsRow() {
           suffix={stat.suffix}
           label={stat.label}
           icon={stat.icon}
-          started={started}
         />
       ))}
     </div>
@@ -270,6 +233,76 @@ const footerLinks = {
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
+/* ─── Floating Background Orbs component ─── */
+function FloatingBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <motion.div
+        className="absolute top-20 left-10 w-72 h-72 bg-orange-200/30 rounded-full blur-3xl"
+        animate={{
+          x: [0, 50, -30, 0],
+          y: [0, -40, 50, 0],
+          scale: [1, 1.15, 0.9, 1],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute bottom-10 right-10 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl"
+        animate={{
+          x: [0, -60, 40, 0],
+          y: [0, 50, -30, 0],
+          scale: [1, 1.1, 0.95, 1],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute top-40 right-1/4 w-40 h-40 bg-orange-100/40 rounded-full blur-2xl"
+        animate={{
+          x: [0, 30, -50, 0],
+          y: [0, 40, -40, 0],
+          scale: [1, 1.2, 0.85, 1],
+        }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+    </div>
+  );
+}
+
+const heroContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
+};
+
+const heroItemVariants = {
+  hidden: { opacity: 0, y: 25 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+};
+
 export default function LandingPage() {
   const setView = useAppStore((s) => s.setView);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -315,30 +348,35 @@ export default function LandingPage() {
               >
                 Pricing
               </a>
-              <Button
-                variant="outline"
-                className="ml-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-                onClick={handleLogin}
-              >
-                Login
-              </Button>
-              <Button
-                className="ml-2 bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200"
-                onClick={handleGetStarted}
-              >
-                Sign Up
-                <ArrowRight className="ml-1 size-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
+                <Button
+                  variant="outline"
+                  className="ml-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                  onClick={handleLogin}
+                >
+                  Login
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
+                <Button
+                  className="ml-2 bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200"
+                  onClick={handleGetStarted}
+                >
+                  Sign Up
+                  <ArrowRight className="ml-1 size-4" />
+                </Button>
+              </motion.div>
             </nav>
 
             {/* Mobile menu button */}
-            <button
+            <motion.button
+              whileTap={{ scale: 0.9 }}
               className="md:hidden p-2 rounded-md text-gray-600 hover:bg-orange-50 hover:text-orange-500"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
               <Menu className="size-6" />
-            </button>
+            </motion.button>
           </div>
 
           {/* Mobile Nav */}
@@ -359,19 +397,23 @@ export default function LandingPage() {
                 Pricing
               </a>
               <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-orange-200 text-orange-600 hover:bg-orange-50"
-                  onClick={handleLogin}
-                >
-                  Login
-                </Button>
-                <Button
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
-                  onClick={handleGetStarted}
-                >
-                  Sign Up
-                </Button>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                  <Button
+                    variant="outline"
+                    className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
+                    onClick={handleLogin}
+                  >
+                    Login
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={handleGetStarted}
+                  >
+                    Sign Up
+                  </Button>
+                </motion.div>
               </div>
             </div>
           )}
@@ -382,53 +424,71 @@ export default function LandingPage() {
         {/* ============================== HERO ============================== */}
         <section className="relative overflow-hidden">
           {/* Decorative background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-amber-50" />
-          <div className="absolute top-20 left-10 w-72 h-72 bg-orange-200/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl" />
-          <div className="absolute top-40 right-1/4 w-40 h-40 bg-orange-100/40 rounded-full blur-2xl" />
+          <FloatingBackground />
 
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
-            <div className="text-center max-w-4xl mx-auto">
+            <motion.div 
+              variants={heroContainerVariants}
+              initial="hidden"
+              animate="visible"
+              className="text-center max-w-4xl mx-auto"
+            >
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-orange-100/80 text-orange-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border border-orange-200/60">
+              <motion.div 
+                variants={heroItemVariants}
+                className="inline-flex items-center gap-2 bg-orange-100/80 text-orange-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border border-orange-200/60"
+              >
                 <Sparkles className="size-4" />
                 AI-Powered Learning for JEE &amp; NEET
-              </div>
+              </motion.div>
 
               {/* Heading */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
+              <motion.h1 
+                variants={heroItemVariants}
+                className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight"
+              >
                 Crack JEE &amp; NEET with{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
                   AI-Powered Learning
                 </span>
-              </h1>
+              </motion.h1>
 
               {/* Subheading */}
-              <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              <motion.p 
+                variants={heroItemVariants}
+                className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
+              >
                 KotaAI — Your 24/7 JEE &amp; NEET Tutor. Get instant doubt
                 resolution, daily practice, and personalized progress tracking.
-              </p>
+              </motion.p>
 
               {/* CTAs */}
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button
-                  size="lg"
-                  className="bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200/50 px-8 text-base h-12"
-                  onClick={handleGetStarted}
-                >
-                  Start Free Trial
-                  <ArrowRight className="ml-2 size-5" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 px-8 text-base h-12"
-                >
-                  <Play className="mr-2 size-5" />
-                  Watch Demo
-                </Button>
-              </div>
-            </div>
+              <motion.div 
+                variants={heroItemVariants}
+                className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+              >
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-200/50 px-8 text-base h-12"
+                    onClick={handleGetStarted}
+                  >
+                    Start Free Trial
+                    <ArrowRight className="ml-2 size-5" />
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 px-8 text-base h-12"
+                  >
+                    <Play className="mr-2 size-5" />
+                    Watch Demo
+                  </Button>
+                </motion.div>
+              </motion.div>
+            </motion.div>
 
             {/* Stats Row */}
             <AnimatedStatsRow />
@@ -458,27 +518,39 @@ export default function LandingPage() {
 
             {/* Feature Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature) => (
-                <Card
+              {features.map((feature, idx) => (
+                <motion.div
                   key={feature.title}
-                  className="group bg-white border-gray-100 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/50 transition-all duration-300 py-6"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  whileHover={{ 
+                    y: -8, 
+                    scale: 1.03, 
+                    boxShadow: "0 20px 25px -5px rgba(249, 115, 22, 0.1), 0 8px 10px -6px rgba(249, 115, 22, 0.1)",
+                    borderColor: "rgba(249, 115, 22, 0.4)"
+                  }}
+                  className="rounded-xl border border-gray-100 bg-white hover:border-orange-200 transition-all duration-300 py-6"
                 >
-                  <CardHeader>
-                    <div
-                      className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${feature.bg} ${feature.color} mb-2 group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      <feature.icon className="size-6" />
-                    </div>
-                    <CardTitle className="text-lg text-gray-900">
-                      {feature.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-gray-500 text-base">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
+                  <Card className="border-0 shadow-none bg-transparent">
+                    <CardHeader>
+                      <div
+                        className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${feature.bg} ${feature.color} mb-2 group-hover:scale-110 transition-transform duration-300`}
+                      >
+                        <feature.icon className="size-6" />
+                      </div>
+                      <CardTitle className="text-lg text-gray-900">
+                        {feature.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="text-gray-500 text-base">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -507,13 +579,25 @@ export default function LandingPage() {
 
             {/* Pricing Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-              {plans.map((plan) => (
-                <Card
+              {plans.map((plan, idx) => (
+                <motion.div
                   key={plan.name}
-                  className={`relative flex flex-col py-6 ${
+                  initial={{ opacity: 0, y: 45 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: idx * 0.15 }}
+                  whileHover={{
+                    y: -8,
+                    scale: plan.highlighted ? 1.05 : 1.03,
+                    boxShadow: plan.highlighted 
+                      ? "0 25px 30px -5px rgba(249, 115, 22, 0.2), 0 12px 15px -6px rgba(249, 115, 22, 0.2)"
+                      : "0 20px 25px -5px rgba(249, 115, 22, 0.1), 0 8px 10px -6px rgba(249, 115, 22, 0.1)",
+                    borderColor: plan.highlighted ? "rgba(249, 115, 22, 0.6)" : "rgba(249, 115, 22, 0.3)"
+                  }}
+                  className={`relative flex flex-col py-6 rounded-xl bg-white border transition-all duration-300 ${
                     plan.highlighted
-                      ? 'border-orange-300 border-2 shadow-xl shadow-orange-100/50 scale-[1.02] md:scale-105'
-                      : 'border-gray-200 hover:border-orange-200 hover:shadow-lg transition-all duration-300'
+                      ? 'border-orange-500 border-2 shadow-xl shadow-orange-100/50'
+                      : 'border-gray-200'
                   }`}
                 >
                   {/* Most Popular Badge */}
@@ -526,7 +610,7 @@ export default function LandingPage() {
                     </div>
                   )}
 
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-2 bg-transparent border-0 shadow-none">
                     <CardTitle className="text-xl text-gray-900">
                       {plan.name}
                     </CardTitle>
@@ -535,7 +619,7 @@ export default function LandingPage() {
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className="flex-1">
+                  <CardContent className="flex-1 bg-transparent border-0 shadow-none">
                     {/* Price */}
                     <div className="mb-6">
                       <span className="text-4xl font-extrabold text-gray-900">
@@ -576,36 +660,38 @@ export default function LandingPage() {
                     </ul>
                   </CardContent>
 
-                  <CardFooter>
-                    {plan.highlighted ? (
-                      <Button
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 h-11"
-                        size="lg"
-                        onClick={handleGetStarted}
-                      >
-                        {plan.cta}
-                        <ChevronRight className="ml-1 size-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 h-11"
-                        size="lg"
-                        onClick={handleGetStarted}
-                      >
-                        {plan.cta}
-                      </Button>
-                    )}
+                  <CardFooter className="bg-transparent border-0 shadow-none">
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full">
+                      {plan.highlighted ? (
+                        <Button
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 h-11"
+                          size="lg"
+                          onClick={handleGetStarted}
+                        >
+                          {plan.cta}
+                          <ChevronRight className="ml-1 size-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 h-11"
+                          size="lg"
+                          onClick={handleGetStarted}
+                        >
+                          {plan.cta}
+                        </Button>
+                      )}
+                    </motion.div>
                   </CardFooter>
-                </Card>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
         {/* ============================== CTA BANNER ============================== */}
-        <section className="py-16 sm:py-20 bg-gradient-to-r from-orange-500 to-amber-500">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+        <section className="relative overflow-hidden py-16 sm:py-20 bg-gradient-to-r from-orange-500 to-amber-500">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <h2 className="text-3xl sm:text-4xl font-bold text-white">
               Ready to Start Your JEE &amp; NEET Journey?
             </h2>
@@ -614,14 +700,16 @@ export default function LandingPage() {
               Start your free trial today — no credit card required.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                className="bg-white text-orange-600 hover:bg-orange-50 shadow-lg px-8 h-12 text-base font-semibold"
-                onClick={handleGetStarted}
-              >
-                Start Free Trial
-                <ArrowRight className="ml-2 size-5" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  size="lg"
+                  className="bg-white text-orange-600 hover:bg-orange-50 shadow-lg px-8 h-12 text-base font-semibold"
+                  onClick={handleGetStarted}
+                >
+                  Start Free Trial
+                  <ArrowRight className="ml-2 size-5" />
+                </Button>
+              </motion.div>
             </div>
           </div>
         </section>

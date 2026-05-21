@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,7 @@ export default function PracticePage() {
   const [mcqUsage, setMcqUsage] = useState({ used: 0, limit: 10 });
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentPlan, setPaymentPlan] = useState<'pro' | 'premium'>('pro');
+  const [showCorrectBurst, setShowCorrectBurst] = useState(false);
 
   // ── Fetch usage on mount ──
   useEffect(() => {
@@ -185,6 +187,11 @@ export default function PracticePage() {
             },
           }));
 
+          if (data.correct) {
+            setShowCorrectBurst(true);
+            setTimeout(() => setShowCorrectBurst(false), 1000);
+          }
+
           // Update usage info from response
           if (data.usage) {
             setMcqUsage({
@@ -294,13 +301,15 @@ export default function PracticePage() {
         {SUBJECTS.map((subject) => {
           const isActive = selectedSubject === subject.name;
           return (
-            <button
+            <motion.button
               key={subject.name}
               onClick={() => setSelectedSubject(subject.name)}
               disabled={isLoadingQuestions}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               className={`
                 flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all
-                min-h-[88px] cursor-pointer
+                min-h-[88px] cursor-pointer w-full
                 ${
                   isActive
                     ? 'border-orange-500 bg-orange-50 shadow-md dark:bg-orange-950/30'
@@ -324,7 +333,7 @@ export default function PracticePage() {
               <span className="text-xs text-muted-foreground">
                 {subject.questions} Qs
               </span>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -343,14 +352,44 @@ export default function PracticePage() {
 
       {/* ── Loading State ── */}
       {isLoadingQuestions && !limitReached && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
-            <p className="text-sm text-muted-foreground">
-              Loading {selectedSubject} questions…
-            </p>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* Progress Bar Skeleton */}
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <div className="h-4 w-28 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+            </div>
+            <div className="h-2 w-full bg-muted rounded-full animate-pulse" />
+          </div>
+          {/* Card Skeleton */}
+          <Card className="border border-border/60">
+            <CardHeader className="pb-3 space-y-2">
+              <div className="flex gap-2">
+                <div className="h-5 w-16 bg-muted rounded-full animate-pulse" />
+                <div className="h-5 w-16 bg-muted rounded-full animate-pulse" />
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+              {/* Question Line Skeletons */}
+              <div className="space-y-2">
+                <div className="h-5 w-full bg-muted rounded animate-pulse" />
+                <div className="h-5 w-5/6 bg-muted rounded animate-pulse" />
+              </div>
+              {/* Options Skeletons */}
+              <div className="flex flex-col gap-3">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-14 w-full border border-border/40 rounded-xl bg-card/50 flex items-center px-4 gap-3 animate-pulse"
+                  >
+                    <div className="size-8 rounded-lg bg-muted shrink-0" />
+                    <div className="h-4 w-2/3 bg-muted rounded" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* ── No Questions ── */}
@@ -483,142 +522,196 @@ export default function PracticePage() {
                 {answeredCount}/{questions.length} answered
               </span>
             </div>
-            <Progress value={progressPercent} className="h-2" />
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-orange-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPercent}%` }}
+                transition={{ type: 'spring', stiffness: 80, damping: 15 }}
+              />
+            </div>
           </div>
 
           {/* Question Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {currentQuestion.topic}
-                </Badge>
-                <Badge
-                  className={`text-xs ${
-                    DIFFICULTY_CONFIG[currentQuestion.difficulty?.toLowerCase()]
-                      ?.className || DIFFICULTY_CONFIG.medium.className
-                  }`}
-                >
-                  {DIFFICULTY_CONFIG[currentQuestion.difficulty?.toLowerCase()]
-                    ?.label || 'Medium'}
-                </Badge>
-                {reviewingAnswers && (
-                  <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
-                    Review Mode
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              {/* Question text */}
-              <p className="text-base md:text-lg font-medium leading-relaxed text-foreground">
-                {currentQuestion.question}
-              </p>
+          <div className="relative overflow-visible">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentQuestion.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.22, ease: 'easeInOut' }}
+              >
+                <Card className="relative overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {currentQuestion.topic}
+                      </Badge>
+                      <Badge
+                        className={`text-xs ${
+                          DIFFICULTY_CONFIG[currentQuestion.difficulty?.toLowerCase()]
+                            ?.className || DIFFICULTY_CONFIG.medium.className
+                        }`}
+                      >
+                        {DIFFICULTY_CONFIG[currentQuestion.difficulty?.toLowerCase()]
+                          ?.label || 'Medium'}
+                      </Badge>
+                      {reviewingAnswers && (
+                        <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                          Review Mode
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-5">
+                    {/* Question text */}
+                    <p className="text-base md:text-lg font-medium leading-relaxed text-foreground">
+                      {currentQuestion.question}
+                    </p>
 
-              {/* Options */}
-              <div className="flex flex-col gap-3">
-                {OPTION_LABELS.map((label) => {
-                  const optionText =
-                    currentQuestion[
-                      `option${label}` as keyof PracticeQuestion
-                    ];
-                  if (typeof optionText !== 'string') return null;
+                    {/* Options */}
+                    <div className="flex flex-col gap-3">
+                      {OPTION_LABELS.map((label) => {
+                        const optionText =
+                          currentQuestion[
+                            `option${label}` as keyof PracticeQuestion
+                          ];
+                        if (typeof optionText !== 'string') return null;
 
-                  const isSelected = currentAnswer === label;
-                  const isSubmitted = !!currentResult;
-                  const isCorrectOption =
-                    isSubmitted && currentResult.correctAnswer === label;
-                  const isWrongSelection =
-                    isSubmitted && isSelected && !currentResult.correct;
+                        const isSelected = currentAnswer === label;
+                        const isSubmitted = !!currentResult;
+                        const isCorrectOption =
+                          isSubmitted && currentResult.correctAnswer === label;
+                        const isWrongSelection =
+                          isSubmitted && isSelected && !currentResult.correct;
 
-                  let optionClass =
-                    'border-2 rounded-xl p-4 transition-all cursor-pointer text-left min-h-[52px] flex items-start gap-3';
+                        let optionClass =
+                          'border-2 rounded-xl p-4 transition-all cursor-pointer text-left min-h-[52px] flex items-start gap-3 w-full';
 
-                  if (!isSubmitted) {
-                    optionClass += isSelected
-                      ? ' border-orange-500 bg-orange-50 dark:bg-orange-950/30'
-                      : ' border-border bg-card hover:border-orange-300 hover:bg-orange-50/50 dark:hover:bg-orange-950/10';
-                  } else if (isCorrectOption) {
-                    optionClass +=
-                      ' border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 cursor-default';
-                  } else if (isWrongSelection) {
-                    optionClass +=
-                      ' border-red-500 bg-red-50 dark:bg-red-950/30 cursor-default';
-                  } else {
-                    optionClass +=
-                      ' border-border bg-card opacity-60 cursor-default';
-                  }
+                        if (!isSubmitted) {
+                          optionClass += isSelected
+                            ? ' border-orange-500 bg-orange-50 dark:bg-orange-950/30'
+                            : ' border-border bg-card hover:border-orange-300 hover:bg-orange-50/50 dark:hover:bg-orange-950/10';
+                        } else if (isCorrectOption) {
+                          optionClass +=
+                            ' border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 cursor-default';
+                        } else if (isWrongSelection) {
+                          optionClass +=
+                            ' border-red-500 bg-red-50 dark:bg-red-950/30 cursor-default';
+                        } else {
+                          optionClass +=
+                            ' border-border bg-card opacity-60 cursor-default';
+                        }
 
-                  return (
-                    <button
-                      key={label}
-                      onClick={() => handleOptionSelect(label)}
-                      disabled={isSubmitted || isSubmittingAnswer}
-                      className={optionClass}
-                      aria-label={`Option ${label}: ${optionText}`}
-                    >
-                      <span
+                        return (
+                          <motion.button
+                            key={label}
+                            onClick={() => handleOptionSelect(label)}
+                            disabled={isSubmitted || isSubmittingAnswer}
+                            className={optionClass}
+                            aria-label={`Option ${label}: ${optionText}`}
+                            animate={isWrongSelection ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+                            transition={{ duration: 0.4 }}
+                            whileHover={!isSubmitted ? { scale: 1.01 } : {}}
+                            whileTap={!isSubmitted ? { scale: 0.99 } : {}}
+                          >
+                            <span
+                              className={`
+                                flex items-center justify-center size-8 shrink-0 rounded-lg text-sm font-bold
+                                ${
+                                  !isSubmitted
+                                    ? isSelected
+                                      ? 'bg-orange-500 text-white'
+                                      : 'bg-muted text-muted-foreground'
+                                    : isCorrectOption
+                                    ? 'bg-emerald-500 text-white'
+                                    : isWrongSelection
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-muted text-muted-foreground'
+                                }
+                              `}
+                            >
+                              {label}
+                            </span>
+
+                            <span className="text-sm md:text-base pt-0.5 flex-1 text-foreground">
+                              {optionText}
+                            </span>
+
+                            {isSubmitted && isCorrectOption && (
+                              <CheckCircle2 className="size-5 text-emerald-600 shrink-0 mt-0.5" />
+                            )}
+                            {isSubmitted && isWrongSelection && (
+                              <XCircle className="size-5 text-red-600 shrink-0 mt-0.5" />
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Explanation */}
+                    {currentResult && currentResult.explanation && (
+                      <div
                         className={`
-                          flex items-center justify-center size-8 shrink-0 rounded-lg text-sm font-bold
+                          rounded-xl p-4 text-sm leading-relaxed
                           ${
-                            !isSubmitted
-                              ? isSelected
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-muted text-muted-foreground'
-                              : isCorrectOption
-                              ? 'bg-emerald-500 text-white'
-                              : isWrongSelection
-                              ? 'bg-red-500 text-white'
-                              : 'bg-muted text-muted-foreground'
+                            currentResult.correct
+                              ? 'bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300'
+                              : 'bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300'
                           }
                         `}
                       >
-                        {label}
-                      </span>
+                        <p className="font-semibold mb-1">
+                          {currentResult.correct ? '✅ Correct!' : '💡 Explanation'}
+                        </p>
+                        <p>{currentResult.explanation}</p>
+                      </div>
+                    )}
 
-                      <span className="text-sm md:text-base pt-0.5 flex-1 text-foreground">
-                        {optionText}
-                      </span>
+                    {/* Submitting spinner */}
+                    {isSubmittingAnswer && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <div className="size-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+                        Submitting answer…
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </AnimatePresence>
 
-                      {isSubmitted && isCorrectOption && (
-                        <CheckCircle2 className="size-5 text-emerald-600 shrink-0 mt-0.5" />
-                      )}
-                      {isSubmitted && isWrongSelection && (
-                        <XCircle className="size-5 text-red-600 shrink-0 mt-0.5" />
-                      )}
-                    </button>
+            {/* Confetti Correct Burst Effect */}
+            {showCorrectBurst && (
+              <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center z-50">
+                {[...Array(20)].map((_, i) => {
+                  const angle = (i * 360) / 20;
+                  const radius = 80 + Math.random() * 80;
+                  const x = Math.cos((angle * Math.PI) / 180) * radius;
+                  const y = Math.sin((angle * Math.PI) / 180) * radius;
+                  return (
+                    <motion.div
+                      key={i}
+                      className={`absolute w-2.5 h-2.5 rounded-full ${
+                        i % 3 === 0 ? 'bg-emerald-500' : i % 3 === 1 ? 'bg-green-400' : 'bg-amber-400'
+                      }`}
+                      initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                      animate={{
+                        x,
+                        y,
+                        scale: [0, 1.5, 0.5, 0],
+                        opacity: [1, 1, 0.8, 0],
+                      }}
+                      transition={{
+                        duration: 0.85,
+                        ease: 'easeOut',
+                      }}
+                    />
                   );
                 })}
               </div>
-
-              {/* Explanation */}
-              {currentResult && currentResult.explanation && (
-                <div
-                  className={`
-                    rounded-xl p-4 text-sm leading-relaxed
-                    ${
-                      currentResult.correct
-                        ? 'bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300'
-                        : 'bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300'
-                    }
-                  `}
-                >
-                  <p className="font-semibold mb-1">
-                    {currentResult.correct ? '✅ Correct!' : '💡 Explanation'}
-                  </p>
-                  <p>{currentResult.explanation}</p>
-                </div>
-              )}
-
-              {/* Submitting spinner */}
-              {isSubmittingAnswer && (
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <div className="size-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
-                  Submitting answer…
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            )}
+          </div>
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
