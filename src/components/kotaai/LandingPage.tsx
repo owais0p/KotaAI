@@ -32,6 +32,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { motion, useInView, animate } from 'framer-motion';
+import ThemeToggle from './ThemeToggle';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                               */
@@ -130,13 +131,13 @@ function AnimatedStatCard({
     <motion.div 
       whileHover={{ y: -6, scale: 1.05 }}
       transition={{ type: "spring", stiffness: 300, damping: 15 }}
-      className="flex flex-col items-center p-4 sm:p-6 rounded-2xl bg-white/70 backdrop-blur-sm border border-orange-100/80 shadow-sm"
+      className="flex flex-col items-center p-4 sm:p-6 rounded-2xl bg-card/70 backdrop-blur-sm border border-border/80 shadow-sm"
     >
       <Icon className="size-6 text-orange-500 mb-2" />
-      <span className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
+      <span className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
         <Counter value={target} />{suffix}
       </span>
-      <span className="text-sm text-gray-500 mt-1">{label}</span>
+      <span className="text-sm text-muted-foreground mt-1">{label}</span>
     </motion.div>
   );
 }
@@ -311,9 +312,9 @@ export default function LandingPage() {
   const handleLogin = () => setView('auth');
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* ============================== NAVBAR ============================== */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-orange-100">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
@@ -326,10 +327,10 @@ export default function LandingPage() {
                 className="rounded-lg"
                 priority
               />
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-foreground">
                 Kota<span className="text-orange-500">AI</span>
               </span>
-              <span className="hidden sm:inline-block ml-2 text-xs text-muted-foreground bg-orange-50 px-2 py-1 rounded-full border border-orange-100">
+              <span className="hidden sm:inline-block ml-2 text-xs text-muted-foreground bg-orange-50 dark:bg-zinc-900 px-2 py-1 rounded-full border border-orange-100 dark:border-zinc-800">
                 Your 24/7 JEE &amp; NEET Tutor
               </span>
             </div>
@@ -338,20 +339,23 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center gap-1">
               <a
                 href="#features"
-                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-orange-500 transition-colors rounded-md hover:bg-orange-50"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-orange-500 transition-colors rounded-md hover:bg-orange-50 dark:hover:bg-zinc-900"
               >
                 Features
               </a>
               <a
                 href="#pricing"
-                className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-orange-500 transition-colors rounded-md hover:bg-orange-50"
+                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-orange-500 transition-colors rounded-md hover:bg-orange-50 dark:hover:bg-zinc-900"
               >
                 Pricing
               </a>
+              <div className="ml-2 mr-1">
+                <ThemeToggle />
+              </div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
                 <Button
                   variant="outline"
-                  className="ml-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                  className="ml-2 border-orange-200 dark:border-zinc-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-zinc-900 hover:text-orange-700"
                   onClick={handleLogin}
                 >
                   Login
@@ -359,7 +363,7 @@ export default function LandingPage() {
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
                 <Button
-                  className="ml-2 bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200"
+                  className="ml-2 bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-200 dark:shadow-none"
                   onClick={handleGetStarted}
                 >
                   Sign Up
@@ -368,30 +372,33 @@ export default function LandingPage() {
               </motion.div>
             </nav>
 
-            {/* Mobile menu button */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              className="md:hidden p-2 rounded-md text-gray-600 hover:bg-orange-50 hover:text-orange-500"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              <Menu className="size-6" />
-            </motion.button>
+            {/* Mobile menu controls */}
+            <div className="flex items-center gap-2 md:hidden">
+              <ThemeToggle />
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                className="p-2 rounded-md text-muted-foreground hover:bg-orange-50 dark:hover:bg-zinc-900 hover:text-orange-500"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                <Menu className="size-6" />
+              </motion.button>
+            </div>
           </div>
 
           {/* Mobile Nav */}
           {mobileMenuOpen && (
-            <div className="md:hidden border-t border-orange-100 py-4 space-y-2">
+            <div className="md:hidden border-t border-border py-4 space-y-2">
               <a
                 href="#features"
-                className="block px-3 py-2 text-sm font-medium text-gray-600 hover:text-orange-500 rounded-md hover:bg-orange-50"
+                className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-orange-500 rounded-md hover:bg-orange-50 dark:hover:bg-zinc-900"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Features
               </a>
               <a
                 href="#pricing"
-                className="block px-3 py-2 text-sm font-medium text-gray-600 hover:text-orange-500 rounded-md hover:bg-orange-50"
+                className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-orange-500 rounded-md hover:bg-orange-50 dark:hover:bg-zinc-900"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
@@ -400,7 +407,7 @@ export default function LandingPage() {
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
                   <Button
                     variant="outline"
-                    className="w-full border-orange-200 text-orange-600 hover:bg-orange-50"
+                    className="w-full border-border text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-zinc-900"
                     onClick={handleLogin}
                   >
                     Login
@@ -496,21 +503,21 @@ export default function LandingPage() {
         </section>
 
         {/* ============================== FEATURES ============================== */}
-        <section id="features" className="py-20 sm:py-28 bg-gray-50/50">
+        <section id="features" className="py-20 sm:py-28 bg-gray-50/50 dark:bg-zinc-950/20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Section Header */}
             <div className="text-center max-w-2xl mx-auto mb-16">
               <Badge
                 variant="secondary"
-                className="bg-orange-100 text-orange-700 border-orange-200 mb-4"
+                className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50 mb-4"
               >
                 <Zap className="size-3 mr-1" />
                 Features
               </Badge>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
                 Everything You Need to Ace JEE &amp; NEET
               </h2>
-              <p className="mt-4 text-gray-600 text-lg">
+              <p className="mt-4 text-muted-foreground text-lg">
                 Our comprehensive toolkit is designed to help you study smarter,
                 not harder.
               </p>
@@ -528,19 +535,19 @@ export default function LandingPage() {
                   whileHover={{ 
                     y: -8, 
                     scale: 1.03, 
-                    boxShadow: "0 20px 25px -5px rgba(249, 115, 22, 0.1), 0 8px 10px -6px rgba(249, 115, 22, 0.1)",
+                    boxShadow: "0 20px 25px -5px rgba(249, 115, 22, 0.15), 0 8px 10px -6px rgba(249, 115, 22, 0.15)",
                     borderColor: "rgba(249, 115, 22, 0.4)"
                   }}
-                  className="rounded-xl border border-gray-100 bg-white hover:border-orange-200 transition-all duration-300 py-6"
+                  className="rounded-xl border border-border bg-card hover:border-orange-500/40 transition-all duration-300 py-6"
                 >
                   <Card className="border-0 shadow-none bg-transparent">
                     <CardHeader>
                       <div
-                        className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${feature.bg} ${feature.color} mb-2 group-hover:scale-110 transition-transform duration-300`}
+                        className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${feature.bg} dark:bg-orange-950/30 ${feature.color} mb-2 group-hover:scale-110 transition-transform duration-300`}
                       >
                         <feature.icon className="size-6" />
                       </div>
-                      <CardTitle className="text-lg text-gray-900">
+                      <CardTitle className="text-lg text-foreground">
                         {feature.title}
                       </CardTitle>
                     </CardHeader>
@@ -557,21 +564,21 @@ export default function LandingPage() {
         </section>
 
         {/* ============================== PRICING ============================== */}
-        <section id="pricing" className="py-20 sm:py-28 bg-white">
+        <section id="pricing" className="py-20 sm:py-28 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Section Header */}
             <div className="text-center max-w-2xl mx-auto mb-16">
               <Badge
                 variant="secondary"
-                className="bg-orange-100 text-orange-700 border-orange-200 mb-4"
+                className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50 mb-4"
               >
                 <Sparkles className="size-3 mr-1" />
                 Pricing
               </Badge>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
                 Simple, Transparent Pricing
               </h2>
-              <p className="mt-4 text-gray-600 text-lg">
+              <p className="mt-4 text-muted-foreground text-lg">
                 No hidden fees. Pick the plan that works for you and start
                 learning today.
               </p>
@@ -591,19 +598,19 @@ export default function LandingPage() {
                     scale: plan.highlighted ? 1.05 : 1.03,
                     boxShadow: plan.highlighted 
                       ? "0 25px 30px -5px rgba(249, 115, 22, 0.2), 0 12px 15px -6px rgba(249, 115, 22, 0.2)"
-                      : "0 20px 25px -5px rgba(249, 115, 22, 0.1), 0 8px 10px -6px rgba(249, 115, 22, 0.1)",
+                      : "0 20px 25px -5px rgba(249, 115, 22, 0.15), 0 8px 10px -6px rgba(249, 115, 22, 0.15)",
                     borderColor: plan.highlighted ? "rgba(249, 115, 22, 0.6)" : "rgba(249, 115, 22, 0.3)"
                   }}
-                  className={`relative flex flex-col py-6 rounded-xl bg-white border transition-all duration-300 ${
+                  className={`relative flex flex-col py-6 rounded-xl bg-card border border-border transition-all duration-300 ${
                     plan.highlighted
-                      ? 'border-orange-500 border-2 shadow-xl shadow-orange-100/50'
-                      : 'border-gray-200'
+                      ? 'border-orange-500 border-2 shadow-xl shadow-orange-100/50 dark:shadow-none'
+                      : 'border-border'
                   }`}
                 >
                   {/* Most Popular Badge */}
                   {plan.highlighted && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-orange-500 text-white border-orange-500 px-4 py-1 text-sm shadow-md shadow-orange-200">
+                      <Badge className="bg-orange-500 text-white border-orange-500 px-4 py-1 text-sm shadow-md shadow-orange-200 dark:shadow-none">
                         <Trophy className="size-3 mr-1" />
                         Most Popular
                       </Badge>
@@ -611,10 +618,10 @@ export default function LandingPage() {
                   )}
 
                   <CardHeader className="pb-2 bg-transparent border-0 shadow-none">
-                    <CardTitle className="text-xl text-gray-900">
+                    <CardTitle className="text-xl text-foreground">
                       {plan.name}
                     </CardTitle>
-                    <CardDescription className="text-gray-500">
+                    <CardDescription className="text-muted-foreground">
                       {plan.description}
                     </CardDescription>
                   </CardHeader>
@@ -622,10 +629,10 @@ export default function LandingPage() {
                   <CardContent className="flex-1 bg-transparent border-0 shadow-none">
                     {/* Price */}
                     <div className="mb-6">
-                      <span className="text-4xl font-extrabold text-gray-900">
+                      <span className="text-4xl font-extrabold text-foreground">
                         {plan.price}
                       </span>
-                      <span className="text-gray-500 text-sm">
+                      <span className="text-muted-foreground text-sm">
                         {plan.period}
                       </span>
                     </div>
@@ -638,19 +645,19 @@ export default function LandingPage() {
                           className="flex items-start gap-3"
                         >
                           {feature.included ? (
-                            <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center">
-                              <Check className="size-3 text-orange-600" />
+                            <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center">
+                              <Check className="size-3 text-orange-600 dark:text-orange-400" />
                             </div>
                           ) : (
-                            <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
-                              <X className="size-3 text-gray-400" />
+                            <div className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+                              <X className="size-3 text-muted-foreground" />
                             </div>
                           )}
                           <span
                             className={`text-sm ${
                               feature.included
-                                ? 'text-gray-700'
-                                : 'text-gray-400'
+                                ? 'text-muted-foreground dark:text-zinc-300'
+                                : 'text-muted-foreground opacity-60 dark:text-zinc-500'
                             }`}
                           >
                             {feature.text}

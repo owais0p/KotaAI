@@ -37,6 +37,8 @@ import PracticePage from '@/components/kotaai/PracticePage';
 import ProgressPage from '@/components/kotaai/ProgressPage';
 import LeaderboardPage from '@/components/kotaai/LeaderboardPage';
 import PaymentModal from '@/components/kotaai/PaymentModal';
+import ThemeToggle from '@/components/kotaai/ThemeToggle';
+
 
 /* ─── 3D Tilt Subject Card Component ─── */
 function SubjectCard3D({
@@ -662,6 +664,7 @@ function DashboardShell() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             {/* Mobile user avatar */}
             <Avatar className="size-8 lg:hidden">
               <AvatarFallback className="bg-orange-500 text-white text-xs font-bold">

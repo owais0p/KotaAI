@@ -29,15 +29,15 @@ function TypingIndicator() {
       exit={{ opacity: 0, y: 10 }}
       className="flex items-start gap-3 max-w-[85%] sm:max-w-[75%]"
     >
-      <div className="flex items-center justify-center size-8 rounded-full bg-orange-100 shrink-0">
-        <Bot className="size-4 text-orange-600" />
+      <div className="flex items-center justify-center size-8 rounded-full bg-orange-100 dark:bg-orange-950/40 shrink-0">
+        <Bot className="size-4 text-orange-600 dark:text-orange-400" />
       </div>
-      <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
         <div className="flex items-center gap-1.5">
           <span className="sr-only">KotaAI is typing</span>
-          <span className="size-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
-          <span className="size-2 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
-          <span className="size-2 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
+          <span className="size-2 rounded-full bg-gray-400 dark:bg-zinc-600 animate-bounce [animation-delay:0ms]" />
+          <span className="size-2 rounded-full bg-gray-400 dark:bg-zinc-600 animate-bounce [animation-delay:150ms]" />
+          <span className="size-2 rounded-full bg-gray-400 dark:bg-zinc-600 animate-bounce [animation-delay:300ms]" />
         </div>
       </div>
     </motion.div>
@@ -62,8 +62,8 @@ function ChatBubble({ message }: { message: ChatMessage }) {
           <UserCircle className="size-4 text-white" />
         </div>
       ) : (
-        <div className="flex items-center justify-center size-8 rounded-full bg-orange-100 shrink-0">
-          <Bot className="size-4 text-orange-600" />
+        <div className="flex items-center justify-center size-8 rounded-full bg-orange-100 dark:bg-orange-950/40 shrink-0">
+          <Bot className="size-4 text-orange-600 dark:text-orange-400" />
         </div>
       )}
 
@@ -71,13 +71,13 @@ function ChatBubble({ message }: { message: ChatMessage }) {
         className={`rounded-2xl px-4 py-3 shadow-sm ${
           isUser
             ? 'bg-orange-500 text-white rounded-tr-sm'
-            : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
+            : 'bg-white dark:bg-card border border-gray-200 dark:border-border text-gray-800 dark:text-foreground rounded-tl-sm'
         }`}
       >
         {!isUser && (
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="text-xs">🎓</span>
-            <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">
+            <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide">
               KotaAI Tutor
             </span>
           </div>
@@ -286,9 +286,9 @@ export default function AIChat() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-background">
       {/* ── Subject Selector ── */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-border shadow-sm">
         <div className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-none">
           {SUBJECTS.map((s) => {
             const isActive = selectedSubject === s.value;
@@ -302,8 +302,8 @@ export default function AIChat() {
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400
                   ${
                     isActive
-                      ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-orange-500 text-white shadow-md shadow-orange-200 dark:shadow-none'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
                   }
                 `}
                 aria-pressed={isActive}
@@ -323,8 +323,8 @@ export default function AIChat() {
               variant="outline"
               className={`ml-auto text-xs whitespace-nowrap ${
                 aiUsage.used >= aiUsage.limit
-                  ? 'border-red-300 text-red-600 bg-red-50'
-                  : 'border-orange-200 text-orange-600 bg-orange-50'
+                  ? 'border-red-300 text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800'
+                  : 'border-orange-200 text-orange-600 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-800'
               }`}
             >
               {aiUsage.used}/{aiUsage.limit === Infinity ? '∞' : aiUsage.limit} AI questions today
@@ -346,10 +346,10 @@ export default function AIChat() {
               <div className="flex items-center justify-center size-16 rounded-full bg-orange-100 mb-4">
                 <Bot className="size-8 text-orange-500" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-1">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-foreground mb-1">
                 Ask any doubt!
               </h3>
-              <p className="text-sm text-gray-500 max-w-[280px]">
+              <p className="text-sm text-gray-500 dark:text-muted-foreground max-w-[280px]">
                 Type your {selectedSubject.toLowerCase()} question below and
                 I&apos;ll explain it step-by-step
               </p>
@@ -386,7 +386,7 @@ export default function AIChat() {
       </ScrollArea>
 
       {/* ── Input Area ── */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-border p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <div className="flex items-end gap-2 max-w-3xl mx-auto">
           <div className="flex-1 relative">
             <Textarea
@@ -401,7 +401,7 @@ export default function AIChat() {
               }
               disabled={isLoading || limitReached}
               rows={1}
-              className="resize-none min-h-[44px] max-h-[104px] pr-3 py-3 text-sm rounded-xl border-gray-300 focus-visible:border-orange-400 focus-visible:ring-orange-400/30 bg-gray-50 placeholder:text-gray-400 disabled:opacity-60"
+              className="resize-none min-h-[44px] max-h-[104px] pr-3 py-3 text-sm rounded-xl border border-gray-300 dark:border-border focus-visible:border-orange-400 focus-visible:ring-orange-400/30 bg-gray-50 dark:bg-[#242424] text-foreground placeholder:text-gray-400 dark:placeholder:text-zinc-500 disabled:opacity-60"
             />
           </div>
           <Button
@@ -418,7 +418,7 @@ export default function AIChat() {
             )}
           </Button>
         </div>
-        <p className="text-[11px] text-gray-400 text-center mt-1.5">
+        <p className="text-[11px] text-gray-400 dark:text-zinc-500 text-center mt-1.5">
           {limitReached ? (
             <span className="text-red-500">Limit reached — upgrade to continue</span>
           ) : (

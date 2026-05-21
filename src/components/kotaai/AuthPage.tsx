@@ -196,7 +196,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-orange-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-orange-50 dark:bg-background px-4 py-8">
       <div className="w-full max-w-md">
         {/* Back button */}
         <Button
@@ -219,14 +219,14 @@ export default function AuthPage() {
             className="rounded-2xl shadow-lg shadow-orange-500/25 mb-3"
             priority
           />
-          <h1 className="text-2xl font-bold text-gray-900">KotaAI</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">KotaAI</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Your AI-Powered Tutor
           </p>
         </div>
 
         {/* Auth Card */}
-        <Card className="shadow-lg border-0 bg-white">
+        <Card className="shadow-lg border border-transparent dark:border-border bg-white dark:bg-card">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <CardHeader className="pb-0 px-6 pt-6">
               <TabsList className="w-full">
@@ -276,7 +276,7 @@ export default function AuthPage() {
                   </div>
 
                   {loginError && (
-                    <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+                    <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800 rounded-md border border-transparent dark:border-red-950/40 px-3 py-2">
                       {loginError}
                     </p>
                   )}
@@ -394,8 +394,8 @@ export default function AuthPage() {
                             relative flex flex-col items-center gap-0.5 rounded-lg border-2 p-3 cursor-pointer transition-all
                             ${
                               signupPlan === plan.value
-                                ? 'border-orange-500 bg-orange-50 shadow-sm'
-                                : 'border-gray-200 bg-white hover:border-gray-300'
+                                ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-500 shadow-sm'
+                                : 'border-gray-200 dark:border-border bg-white dark:bg-card hover:border-gray-300 dark:hover:border-zinc-700'
                             }
                           `}
                         >
@@ -407,8 +407,8 @@ export default function AuthPage() {
                           <span
                             className={`text-sm font-semibold ${
                               signupPlan === plan.value
-                                ? 'text-orange-700'
-                                : 'text-gray-900'
+                                ? 'text-orange-700 dark:text-orange-400'
+                                : 'text-gray-900 dark:text-foreground'
                             }`}
                           >
                             {plan.label}
@@ -416,8 +416,8 @@ export default function AuthPage() {
                           <span
                             className={`text-xs font-medium ${
                               signupPlan === plan.value
-                                ? 'text-orange-600'
-                                : 'text-gray-500'
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : 'text-gray-500 dark:text-muted-foreground'
                             }`}
                           >
                             {plan.price}
@@ -455,7 +455,7 @@ export default function AuthPage() {
                   </div>
 
                   {signupError && (
-                    <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+                    <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800 rounded-md border border-transparent dark:border-red-950/40 px-3 py-2">
                       {signupError}
                     </p>
                   )}

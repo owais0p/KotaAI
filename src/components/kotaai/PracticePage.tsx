@@ -287,8 +287,8 @@ export default function PracticePage() {
             variant="outline"
             className={`mt-2 text-xs ${
               mcqUsage.used >= mcqUsage.limit
-                ? 'border-red-300 text-red-600 bg-red-50'
-                : 'border-orange-200 text-orange-600 bg-orange-50'
+                ? 'border-red-300 text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800'
+                : 'border-orange-200 text-orange-600 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-800'
             }`}
           >
             {mcqUsage.used}/{mcqUsage.limit === Infinity ? '∞' : mcqUsage.limit} MCQs used today
