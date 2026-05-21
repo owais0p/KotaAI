@@ -239,7 +239,7 @@ function FloatingBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
       <motion.div
-        className="absolute top-20 left-10 w-72 h-72 bg-orange-200/30 rounded-full blur-3xl"
+        className="absolute top-20 left-10 w-96 h-96 bg-orange-200 opacity-60 rounded-full blur-3xl"
         animate={{
           x: [0, 50, -30, 0],
           y: [0, -40, 50, 0],
@@ -252,7 +252,7 @@ function FloatingBackground() {
         }}
       />
       <motion.div
-        className="absolute bottom-10 right-10 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl"
+        className="absolute bottom-10 right-10 w-96 h-96 bg-amber-200 opacity-50 rounded-full blur-3xl"
         animate={{
           x: [0, -60, 40, 0],
           y: [0, 50, -30, 0],
@@ -265,7 +265,7 @@ function FloatingBackground() {
         }}
       />
       <motion.div
-        className="absolute top-40 right-1/4 w-40 h-40 bg-orange-100/40 rounded-full blur-2xl"
+        className="absolute top-40 right-1/4 w-96 h-96 bg-orange-100 opacity-70 rounded-full blur-3xl"
         animate={{
           x: [0, 30, -50, 0],
           y: [0, 40, -40, 0],
@@ -443,7 +443,7 @@ export default function LandingPage() {
               {/* Badge */}
               <motion.div 
                 variants={heroItemVariants}
-                className="inline-flex items-center gap-2 bg-orange-100/80 text-orange-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border border-orange-200/60"
+                className="inline-flex items-center gap-2 bg-orange-100/80 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border border-orange-200/60 dark:border-orange-900/50"
               >
                 <Sparkles className="size-4" />
                 AI-Powered Learning for JEE &amp; NEET
@@ -452,7 +452,7 @@ export default function LandingPage() {
               {/* Heading */}
               <motion.h1 
                 variants={heroItemVariants}
-                className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight"
+                className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight"
               >
                 Crack JEE &amp; NEET with{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
@@ -463,7 +463,7 @@ export default function LandingPage() {
               {/* Subheading */}
               <motion.p 
                 variants={heroItemVariants}
-                className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
+                className="mt-6 text-lg sm:text-xl text-gray-600 dark:text-gray-200 max-w-2xl mx-auto leading-relaxed"
               >
                 KotaAI — Your 24/7 JEE &amp; NEET Tutor. Get instant doubt
                 resolution, daily practice, and personalized progress tracking.
@@ -488,7 +488,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-full sm:w-auto border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 px-8 text-base h-12"
+                    className="w-full sm:w-auto border-orange-200 dark:border-zinc-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-zinc-900 hover:text-orange-700 dark:hover:text-orange-300 px-8 text-base h-12"
                   >
                     <Play className="mr-2 size-5" />
                     Watch Demo
@@ -552,7 +552,7 @@ export default function LandingPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <CardDescription className="text-gray-500 text-base">
+                      <CardDescription className="text-gray-500 dark:text-gray-300 text-base">
                         {feature.description}
                       </CardDescription>
                     </CardContent>
@@ -681,7 +681,7 @@ export default function LandingPage() {
                       ) : (
                         <Button
                           variant="outline"
-                          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 h-11"
+                          className="w-full border-orange-200 dark:border-zinc-800 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-zinc-900 hover:text-orange-700 dark:hover:text-orange-300 h-11"
                           size="lg"
                           onClick={handleGetStarted}
                         >
