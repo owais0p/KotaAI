@@ -31,16 +31,16 @@ interface LeaderboardData {
 const PODIUM_MEDALS = ['🥇', '🥈', '🥉'];
 
 const AVATAR_COLORS = [
-  'bg-orange-500',
-  'bg-purple-500',
-  'bg-emerald-500',
-  'bg-sky-500',
-  'bg-rose-500',
-  'bg-amber-500',
-  'bg-teal-500',
-  'bg-indigo-500',
-  'bg-pink-500',
-  'bg-lime-500',
+  'bg-[#533afd]',
+  'bg-purple-600',
+  'bg-emerald-600',
+  'bg-sky-600',
+  'bg-[#ea2261]',
+  'bg-[#f96bee]',
+  'bg-teal-600',
+  'bg-[#533afd]/80',
+  'bg-pink-600',
+  'bg-lime-600',
 ];
 
 function getAvatarColor(name: string): string {
@@ -65,27 +65,27 @@ function getChangeIndicator(rank: number): {
     return {
       icon: <TrendingUp className="size-3" />,
       label: 'Rising',
-      color: 'text-green-600 dark:text-green-400',
+      color: 'text-emerald-600',
     };
   }
   if (rank <= 10) {
     return {
       icon: <TrendingUp className="size-3" />,
       label: 'Up',
-      color: 'text-green-500 dark:text-green-400',
+      color: 'text-emerald-600/80',
     };
   }
   if (rank <= 15) {
     return {
       icon: <TrendingDown className="size-3" />,
       label: 'Down',
-      color: 'text-orange-500 dark:text-orange-400',
+      color: 'text-[#ea2261]',
     };
   }
   return {
-    icon: <span className="text-[10px] font-bold">NEW</span>,
+    icon: <span className="text-[9px] font-bold">NEW</span>,
     label: 'New',
-    color: 'text-sky-500 dark:text-sky-400',
+    color: 'text-brand-indigo-soft',
   };
 }
 
@@ -100,9 +100,9 @@ function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
 
   const heights = ['h-20 md:h-24', 'h-28 md:h-32', 'h-16 md:h-20'];
   const podiumColors = [
-    'from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700',
-    'from-orange-400 to-orange-500 dark:from-orange-500 dark:to-orange-600',
-    'from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800',
+    'from-[#a8c3de]/10 to-[#a8c3de]/20 border border-[#a8c3de]/30 text-[#0d253d] dark:text-white',
+    'from-brand-indigo/10 to-brand-indigo-soft/20 border-2 border-brand-indigo/50 text-[#0d253d] dark:text-white shadow-[rgba(83,58,253,0.06)_0_8px_24px]',
+    'from-[#9b6829]/10 to-[#9b6829]/20 border border-[#9b6829]/20 text-[#0d253d] dark:text-white',
   ];
 
   return (
@@ -113,17 +113,17 @@ function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
         const isCenter = idx === 1;
         const rankIdx = idx === 0 ? 1 : idx === 1 ? 0 : 2;
         const avatarSize = isCenter ? 'size-14 md:size-16' : 'size-11 md:size-13';
-        const nameSize = isCenter ? 'text-sm font-bold' : 'text-xs font-semibold';
-        const scoreSize = isCenter ? 'text-lg font-bold' : 'text-sm font-bold';
+        const nameSize = isCenter ? 'text-sm font-semibold text-[#0d253d] dark:text-white' : 'text-xs text-[#4f566b] dark:text-[#a8c3de]';
+        const scoreSize = isCenter ? 'text-lg font-bold font-tabular text-[#533afd] dark:text-brand-indigo-soft' : 'text-sm font-bold font-tabular text-[#4f566b] dark:text-[#a8c3de]';
 
         return (
           <div
             key={entry.id}
-            className="flex-1 max-w-[140px] flex flex-col items-center"
+            className="flex-1 max-w-[140px] flex flex-col items-center animate-fade-in"
           >
             {/* Avatar + medal */}
             <div className="relative mb-2">
-              <Avatar className={`${avatarSize} ring-2 ${isCenter ? 'ring-orange-400 ring-offset-2' : 'ring-muted'}`}>
+              <Avatar className={`${avatarSize} ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0d253d] ${isCenter ? 'ring-brand-indigo' : 'ring-[#e3e8ee]'}`}>
                 <AvatarFallback
                   className={`${getAvatarColor(entry.user.name)} text-white font-bold ${isCenter ? 'text-lg' : 'text-sm'}`}
                 >
@@ -141,15 +141,15 @@ function Podium({ top3 }: { top3: LeaderboardEntry[] }) {
             </p>
 
             {/* Score */}
-            <p className={`${scoreSize} text-orange-600 dark:text-orange-400`}>
+            <p className={`${scoreSize}`}>
               {entry.score}
             </p>
 
             {/* Podium block */}
             <div
-              className={`w-full mt-2 rounded-t-lg bg-gradient-to-t ${podiumColors[idx]} ${heights[idx]} flex items-start justify-center pt-2`}
+              className={`w-full mt-2 rounded-t-xl bg-gradient-to-t ${podiumColors[idx]} flex items-start justify-center pt-2.5`}
             >
-              <span className="text-white/90 font-bold text-lg">
+              <span className="text-[#0d253d] dark:text-white font-bold text-lg">
                 {rankIdx + 1}
               </span>
             </div>
@@ -194,35 +194,35 @@ export default function LeaderboardPage() {
     return (
       <div className="space-y-6 p-4 md:p-6 max-w-3xl mx-auto">
         {/* Header skeleton */}
-        <div className="flex items-center gap-3">
-          <Skeleton className="size-10 rounded-lg" />
+        <div className="flex items-center gap-3 animate-pulse">
+          <Skeleton className="size-10 rounded-lg bg-white border border-[#e3e8ee]" />
           <div>
-            <Skeleton className="h-6 w-40 mb-1" />
-            <Skeleton className="h-4 w-56" />
+            <Skeleton className="h-5 w-32 mb-2 bg-canvas-soft" />
+            <Skeleton className="h-3 w-48 bg-canvas-soft" />
           </div>
         </div>
 
         {/* Podium skeleton */}
-        <Card>
+        <Card className="border border-[#e3e8ee] bg-white animate-pulse">
           <CardContent className="p-6">
             <div className="flex items-end justify-center gap-4 h-40">
-              <Skeleton className="w-20 h-24 rounded-t-lg" />
-              <Skeleton className="w-24 h-32 rounded-t-lg" />
-              <Skeleton className="w-20 h-20 rounded-t-lg" />
+              <Skeleton className="w-20 h-24 rounded-t-lg bg-canvas-soft" />
+              <Skeleton className="w-24 h-32 rounded-t-lg bg-canvas-soft" />
+              <Skeleton className="w-20 h-20 rounded-t-lg bg-canvas-soft" />
             </div>
           </CardContent>
         </Card>
 
         {/* List skeleton */}
-        <Card>
+        <Card className="border border-[#e3e8ee] bg-white animate-pulse">
           <CardContent className="p-4 space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
-                <Skeleton className="size-8 rounded-full" />
-                <Skeleton className="h-4 w-8" />
-                <Skeleton className="size-8 rounded-full" />
-                <Skeleton className="h-4 flex-1" />
-                <Skeleton className="h-4 w-12" />
+                <Skeleton className="size-6 rounded-full bg-canvas-soft" />
+                <Skeleton className="h-3 w-6 bg-canvas-soft" />
+                <Skeleton className="size-8 rounded-full bg-canvas-soft" />
+                <Skeleton className="h-3 flex-1 bg-canvas-soft" />
+                <Skeleton className="h-3 w-10 bg-canvas-soft" />
               </div>
             ))}
           </CardContent>
@@ -234,13 +234,13 @@ export default function LeaderboardPage() {
   // ── Error State ────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center min-h-[50vh]">
-        <Trophy className="size-12 text-orange-500 mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Unable to Load Leaderboard</h3>
-        <p className="text-muted-foreground mb-4">{error}</p>
+      <div className="flex flex-col items-center justify-center p-8 text-center min-h-[50vh] text-[#0d253d]">
+        <Trophy className="size-12 text-[#ea2261] mb-4" />
+        <h3 className="text-lg font-light mb-2">Unable to Load Leaderboard</h3>
+        <p className="text-xs text-[#4f566b] mb-4">{error}</p>
         <button
           onClick={fetchLeaderboard}
-          className="text-sm text-orange-600 dark:text-orange-400 hover:underline"
+          className="text-xs text-brand-indigo hover:text-brand-indigo-deep font-semibold hover:underline"
         >
           Try Again
         </button>
@@ -256,26 +256,26 @@ export default function LeaderboardPage() {
   const currentUserEntry = leaderboard.find((e) => e.userId === user?.id);
 
   return (
-    <div className="space-y-6 p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="space-y-6 p-4 md:p-6 max-w-3xl mx-auto text-[#0d253d] dark:text-white">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-950/50">
-          <Trophy className="size-5 text-orange-600 dark:text-orange-400" />
+      <div className="flex items-center gap-3 border-b border-[#e3e8ee] dark:border-[#273951]/40 pb-4">
+        <div className="flex size-10 items-center justify-center rounded-lg bg-brand-indigo/10 border border-brand-indigo/20">
+          <Trophy className="size-5 text-brand-indigo" />
         </div>
         <div>
-          <h1 className="text-xl font-bold md:text-2xl">Leaderboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Top performers — all time
+          <h1 className="text-xl font-light tracking-tight text-[#0d253d] dark:text-white md:text-2xl">Leaderboard</h1>
+          <p className="text-xs text-[#4f566b] dark:text-[#a8c3de] font-light mt-0.5">
+            Top performers &mdash; compete with students globally.
           </p>
         </div>
       </div>
 
       {/* ── Podium Section ─────────────────────────────────────── */}
       {top3.length > 0 && (
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-0 text-center">
-            <CardTitle className="flex items-center justify-center gap-2 text-orange-700 dark:text-orange-400">
-              <Crown className="size-5" />
+        <Card className="border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] overflow-hidden shadow-sm">
+          <CardHeader className="pb-0 text-center bg-transparent">
+            <CardTitle className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wider text-brand-indigo dark:text-brand-indigo-soft">
+              <Crown className="size-4" />
               Top Performers
             </CardTitle>
           </CardHeader>
@@ -287,9 +287,9 @@ export default function LeaderboardPage() {
 
       {/* ── Current User Rank (if not in top 3) ────────────────── */}
       {currentUserEntry && currentUserEntry.rank > 3 && (
-        <Card className="border-orange-200 dark:border-orange-800/50 bg-orange-50/50 dark:bg-orange-950/20">
+        <Card className="border border-brand-indigo/35 bg-brand-indigo-subdued/10 shadow-sm overflow-hidden">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="flex size-8 items-center justify-center rounded-full bg-orange-500 text-white text-sm font-bold">
+            <div className="flex size-7 items-center justify-center rounded-full bg-brand-indigo text-white text-xs font-bold font-tabular">
               {currentUserEntry.rank}
             </div>
             <Avatar className="size-8">
@@ -299,15 +299,15 @@ export default function LeaderboardPage() {
                 {getInitial(currentUserEntry.user.name)}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-semibold flex-1">
+            <span className="text-sm font-semibold flex-1 text-[#0d253d] dark:text-white">
               You ({currentUserEntry.user.name})
             </span>
-            <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
+            <span className="text-sm font-bold text-brand-indigo dark:text-brand-indigo-soft font-tabular">
               {currentUserEntry.score} pts
             </span>
             <Badge
               variant="outline"
-              className="border-orange-300 text-orange-600 dark:border-orange-700 dark:text-orange-400 text-[10px]"
+              className="border-brand-indigo/40 text-brand-indigo text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md"
             >
               Rank #{currentUserEntry.rank}
             </Badge>
@@ -317,15 +317,15 @@ export default function LeaderboardPage() {
 
       {/* ── Remaining Leaderboard List ─────────────────────────── */}
       {remaining.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Medal className="size-4 text-primary" />
+        <Card className="border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 bg-transparent">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 text-[#4f566b] dark:text-[#a8c3de]">
+              <Medal className="size-4 text-brand-indigo" />
               Full Rankings
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-1 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
+            <div className="space-y-1.5 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
               {remaining.map((entry) => {
                 const isCurrentUser = entry.userId === user?.id;
                 const change = getChangeIndicator(entry.rank);
@@ -333,18 +333,18 @@ export default function LeaderboardPage() {
                 return (
                   <div
                     key={entry.id}
-                    className={`flex items-center gap-3 rounded-lg p-2.5 transition-colors ${
+                    className={`flex items-center gap-3 rounded-xl p-3 border hover:border-brand-indigo/30 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
                       isCurrentUser
-                        ? 'bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800/50'
-                        : 'hover:bg-muted/50'
+                        ? 'bg-brand-indigo-subdued/10 border-brand-indigo/35'
+                        : 'border-[#e3e8ee] dark:border-[#273951]/40 bg-canvas-soft/20 dark:bg-[#1c1e54]/10 hover:bg-canvas-soft/40 dark:hover:bg-[#1c1e54]/30'
                     }`}
                   >
                     {/* Rank */}
                     <div
-                      className={`flex size-8 items-center justify-center rounded-full text-sm font-bold shrink-0 ${
+                      className={`flex size-7 items-center justify-center rounded-full text-xs font-bold font-tabular shrink-0 ${
                         isCurrentUser
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-muted text-muted-foreground'
+                          ? 'bg-brand-indigo text-white shadow-sm'
+                          : 'bg-canvas-soft dark:bg-[#1c1e54]/50 text-[#4f566b] dark:text-[#a8c3de]'
                       }`}
                     >
                       {entry.rank}
@@ -363,13 +363,13 @@ export default function LeaderboardPage() {
                     <span
                       className={`text-sm flex-1 min-w-0 truncate ${
                         isCurrentUser
-                          ? 'font-bold text-orange-700 dark:text-orange-400'
-                          : 'font-medium'
+                          ? 'font-semibold text-brand-indigo dark:text-brand-indigo-soft'
+                          : 'font-light text-[#0d253d] dark:text-white'
                       }`}
                     >
                       {entry.user.name}
                       {isCurrentUser && (
-                        <span className="text-xs text-muted-foreground ml-1">
+                        <span className="text-[10px] text-[#4f566b] dark:text-[#a8c3de]/60 ml-1.5 font-light">
                           (You)
                         </span>
                       )}
@@ -377,10 +377,10 @@ export default function LeaderboardPage() {
 
                     {/* Score */}
                     <span
-                      className={`text-sm font-bold shrink-0 ${
+                      className={`text-sm font-semibold font-tabular shrink-0 ${
                         isCurrentUser
-                          ? 'text-orange-600 dark:text-orange-400'
-                          : 'text-foreground'
+                          ? 'text-brand-indigo'
+                          : 'text-[#4f566b] dark:text-[#a8c3de]'
                       }`}
                     >
                       {entry.score}
@@ -389,7 +389,7 @@ export default function LeaderboardPage() {
                     {/* Change indicator */}
                     <div className={`flex items-center gap-1 shrink-0 ${change.color}`}>
                       {change.icon}
-                      <span className="text-[10px] font-medium hidden sm:inline">
+                      <span className="text-[9px] font-semibold uppercase tracking-wider hidden sm:inline">
                         {change.label}
                       </span>
                     </div>
@@ -403,12 +403,12 @@ export default function LeaderboardPage() {
 
       {/* ── Empty State ────────────────────────────────────────── */}
       {leaderboard.length === 0 && (
-        <Card>
+        <Card className="bg-white border border-[#e3e8ee] shadow-sm">
           <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <Trophy className="size-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Rankings Yet</h3>
-            <p className="text-muted-foreground text-sm">
-              Start practicing to appear on the leaderboard!
+            <Trophy className="size-12 text-[#7a8c9f] mb-4" />
+            <h3 className="text-base font-semibold mb-2">No Rankings Yet</h3>
+            <p className="text-xs text-[#4f566b] font-light max-w-xs leading-relaxed">
+              Start practicing mock questions to appear on the global leaderboard!
             </p>
           </CardContent>
         </Card>
@@ -416,11 +416,11 @@ export default function LeaderboardPage() {
 
       {/* ── Not on Leaderboard Message ─────────────────────────── */}
       {leaderboard.length > 0 && !currentUserEntry && user && (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-[#e3e8ee] bg-white/40">
           <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-            <Trophy className="size-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Practice more to appear on the leaderboard!
+            <Trophy className="size-7 text-[#7a8c9f] mb-2" />
+            <p className="text-xs text-[#4f566b] font-light">
+              Practice more mock questions to appear on the leaderboard!
             </p>
           </CardContent>
         </Card>

@@ -11,7 +11,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Check, CreditCard, Shield, Sparkles } from 'lucide-react';
+import { Check, CreditCard, Shield, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import type { User } from '@/lib/types';
 
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -43,9 +43,9 @@ const PLAN_DETAILS = {
       'Daily practice MCQs',
       'Leaderboard access',
     ],
-    color: 'border-orange-300',
-    badgeClass: 'bg-orange-100 text-orange-700 border-orange-200',
-    buttonClass: 'bg-orange-500 hover:bg-orange-600 text-white',
+    color: 'border-brand-indigo/30',
+    badgeClass: 'bg-brand-indigo/15 text-brand-indigo border border-brand-indigo/30',
+    buttonClass: 'bg-brand-indigo hover:bg-brand-indigo-deep text-white rounded-full',
   },
   premium: {
     name: 'Premium',
@@ -60,9 +60,9 @@ const PLAN_DETAILS = {
       'Performance analytics',
       'Custom practice sets',
     ],
-    color: 'border-amber-300',
-    badgeClass: 'bg-amber-100 text-amber-700 border-amber-200',
-    buttonClass: 'bg-amber-500 hover:bg-amber-600 text-white',
+    color: 'border-[#9b6829]/20',
+    badgeClass: 'bg-[#f5e9d4] text-[#9b6829] border border-[#9b6829]/20',
+    buttonClass: 'bg-[#f5e9d4] hover:bg-[#f5e9d4]/90 text-[#9b6829] border border-[#9b6829]/15 rounded-full',
   },
 };
 
@@ -116,7 +116,7 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
           email: user.email,
         },
         theme: {
-          color: '#f97316', // orange-500
+          color: '#533afd', // brand-indigo
         },
         handler: async function (response: any) {
           // Payment successful - verify on server
@@ -181,51 +181,51 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-[#0d253d] border-[#e3e8ee] dark:border-[#273951]/40 text-[#0d253d] dark:text-white rounded-2xl overflow-hidden shadow-lg">
         {step === 'checkout' && (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CreditCard className="size-5 text-orange-500" />
+              <DialogTitle className="flex items-center gap-2 text-[#0d253d] dark:text-white font-normal">
+                <CreditCard className="size-5 text-brand-indigo" />
                 Upgrade to {planDetail.name}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-[#4f566b] dark:text-[#a8c3de] text-xs font-light">
                 Complete your payment to unlock all {planDetail.name} features
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 mt-2">
               {/* Price */}
-              <div className="flex items-baseline gap-1 p-4 rounded-xl bg-orange-50 border border-orange-100">
-                <span className="text-3xl font-extrabold text-gray-900">{planDetail.price}</span>
-                <span className="text-gray-500 text-sm">{planDetail.priceNote}</span>
-                <Badge className={`ml-auto ${planDetail.badgeClass}`}>
+              <div className="flex items-baseline gap-1 p-4 rounded-xl bg-canvas-soft dark:bg-[#1c1e54]/30 border border-[#e3e8ee] dark:border-[#273951]/40">
+                <span className="text-3xl font-light text-[#0d253d] dark:text-white font-tabular">{planDetail.price}</span>
+                <span className="text-[#4f566b] dark:text-[#a8c3de] text-sm font-light">{planDetail.priceNote}</span>
+                <Badge className={`ml-auto text-[10px] font-semibold px-2 py-0.5 ${planDetail.badgeClass}`}>
                   {planDetail.name}
                 </Badge>
               </div>
 
               {/* Features */}
-              <ul className="space-y-2.5">
+              <ul className="space-y-2.5 my-2">
                 {planDetail.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2.5">
-                    <div className="mt-0.5 flex-shrink-0 size-5 rounded-full bg-orange-100 flex items-center justify-center">
-                      <Check className="size-3 text-orange-600" />
+                    <div className="mt-0.5 flex-shrink-0 size-5 rounded-full bg-brand-indigo/10 border border-brand-indigo/20 flex items-center justify-center">
+                      <Check className="size-3 text-brand-indigo" />
                     </div>
-                    <span className="text-sm text-gray-700">{feature}</span>
+                    <span className="text-sm text-[#4f566b] dark:text-[#a8c3de] font-light">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               {/* Razorpay redirect note */}
-              <div className="space-y-2 p-4 rounded-xl border bg-card">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CreditCard className="size-4 text-muted-foreground flex-shrink-0" />
-                  <span>You&apos;ll be redirected to Razorpay&apos;s secure payment gateway</span>
+              <div className="space-y-2 p-4 rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-canvas-soft/50 dark:bg-[#1c1e54]/20">
+                <div className="flex items-center gap-2 text-xs text-[#4f566b] dark:text-[#a8c3de] font-light">
+                  <CreditCard className="size-4 text-[#7a8c9f] flex-shrink-0" />
+                  <span>You&apos;ll be redirected to Razorpay&apos;s secure payment gateway.</span>
                 </div>
               </div>
 
               {/* Security note */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-[10px] text-[#7a8c9f] dark:text-[#7a8c9f]/60 font-light">
                 <Shield className="size-3.5" />
                 <span>Secured by Razorpay. 256-bit SSL encryption.</span>
               </div>
@@ -233,13 +233,13 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
               {/* Pay button */}
               {isPaymentAvailable ? (
                 <Button
-                  className={`w-full h-12 text-base font-semibold ${planDetail.buttonClass}`}
+                  className={`w-full h-11 text-sm font-semibold ${planDetail.buttonClass}`}
                   onClick={handlePayment}
                 >
                   Pay {planDetail.price} {planDetail.priceNote}
                 </Button>
               ) : (
-                <div className="w-full text-center p-3.5 bg-orange-50 border border-orange-200 rounded-xl text-orange-700 font-semibold shadow-sm">
+                <div className="w-full text-center p-3 bg-[#ea2261]/10 border border-[#ea2261]/20 rounded-full text-[#ea2261] text-xs font-semibold shadow-sm">
                   Payment coming soon
                 </div>
               )}
@@ -250,13 +250,13 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
         {step === 'processing' && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <div className="relative">
-              <div className="size-16 rounded-full border-4 border-orange-200 border-t-orange-500 animate-spin" />
-              <CreditCard className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 text-orange-500" />
+              <Loader2 className="size-16 text-brand-indigo animate-spin" />
+              <CreditCard className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-6 text-[#533afd] animate-pulse" />
             </div>
             <div className="text-center">
-              <p className="text-base font-semibold">Verifying Payment...</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Please wait while we confirm your payment
+              <p className="text-sm font-semibold text-[#0d253d] dark:text-white">Verifying Payment…</p>
+              <p className="text-xs text-[#4f566b] dark:text-[#a8c3de] mt-1 font-light">
+                Please wait while we confirm your transaction
               </p>
             </div>
           </div>
@@ -264,17 +264,17 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
 
         {step === 'success' && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <div className="flex items-center justify-center size-16 rounded-full bg-emerald-100">
+            <div className="flex items-center justify-center size-16 rounded-full bg-emerald-500/10 border border-emerald-500/20">
               <Sparkles className="size-8 text-emerald-600" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-emerald-700">Payment Successful! 🎉</p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-lg font-normal text-emerald-600">Payment Successful! 🎉</p>
+              <p className="text-xs text-[#4f566b] dark:text-[#a8c3de] mt-1 font-light">
                 Welcome to KotaAI {planDetail.name}! All features are now unlocked.
               </p>
             </div>
             <Button
-              className="bg-orange-500 hover:bg-orange-600 text-white mt-2"
+              className="bg-brand-indigo hover:bg-brand-indigo-deep text-white mt-2 rounded-full px-6 text-xs font-semibold shadow-sm"
               onClick={handleClose}
             >
               Start Learning
@@ -284,21 +284,21 @@ export default function PaymentModal({ open, onOpenChange, plan, onSuccess }: Pa
 
         {step === 'error' && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <div className="flex items-center justify-center size-16 rounded-full bg-red-100">
-              <span className="text-2xl">❌</span>
+            <div className="flex items-center justify-center size-16 rounded-full bg-[#ea2261]/10 border border-[#ea2261]/20">
+              <AlertTriangle className="size-8 text-[#ea2261]" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-red-700">Payment Failed</p>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-lg font-normal text-[#ea2261]">Payment Failed</p>
+              <p className="text-xs text-[#4f566b] dark:text-[#a8c3de] mt-1 font-light">
                 {error || 'Something went wrong. Please try again.'}
               </p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" className="rounded-full border-[#e3e8ee] dark:border-[#273951]/40 text-xs text-[#4f566b] dark:text-[#a8c3de] hover:bg-canvas-soft dark:hover:bg-[#1c1e54]/50" onClick={handleClose}>
                 Cancel
               </Button>
               <Button
-                className="bg-orange-500 hover:bg-orange-600 text-white"
+                className="bg-[#ea2261] hover:bg-[#ea2261]/80 text-white rounded-full text-xs font-semibold shadow-sm"
                 onClick={() => { setStep('checkout'); setError(''); }}
               >
                 Try Again

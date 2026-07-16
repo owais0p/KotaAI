@@ -29,15 +29,15 @@ function TypingIndicator() {
       exit={{ opacity: 0, y: 10 }}
       className="flex items-start gap-3 max-w-[85%] sm:max-w-[75%]"
     >
-      <div className="flex items-center justify-center size-8 rounded-full bg-orange-100 dark:bg-orange-950/40 shrink-0">
-        <Bot className="size-4 text-orange-600 dark:text-orange-400" />
+      <div className="flex items-center justify-center size-8 rounded-full bg-brand-indigo/10 shrink-0">
+        <Bot className="size-4 text-brand-indigo" />
       </div>
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+      <div className="bg-white dark:bg-[#0d253d] border border-[#e3e8ee] dark:border-[#273951]/40 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
         <div className="flex items-center gap-1.5">
-          <span className="sr-only">KotaAI is typing</span>
-          <span className="size-2 rounded-full bg-gray-400 dark:bg-zinc-600 animate-bounce [animation-delay:0ms]" />
-          <span className="size-2 rounded-full bg-gray-400 dark:bg-zinc-600 animate-bounce [animation-delay:150ms]" />
-          <span className="size-2 rounded-full bg-gray-400 dark:bg-zinc-600 animate-bounce [animation-delay:300ms]" />
+          <span className="sr-only">KotaAI is typing…</span>
+          <span className="size-2 rounded-full bg-[#533afd]/40 animate-bounce [animation-delay:0ms]" />
+          <span className="size-2 rounded-full bg-[#533afd]/40 animate-bounce [animation-delay:150ms]" />
+          <span className="size-2 rounded-full bg-[#533afd]/40 animate-bounce [animation-delay:300ms]" />
         </div>
       </div>
     </motion.div>
@@ -53,31 +53,33 @@ function ChatBubble({ message }: { message: ChatMessage }) {
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className={`flex items-start gap-3 max-w-[85%] sm:max-w-[75%] ${
-        isUser ? 'ml-auto flex-row-reverse' : ''
-      }`}
+      className="flex items-start gap-3 max-w-[85%] sm:max-w-[75%]"
+      style={{
+        alignSelf: isUser ? 'flex-end' : 'flex-start',
+        flexDirection: isUser ? 'row-reverse' : 'row',
+      }}
     >
       {isUser ? (
-        <div className="flex items-center justify-center size-8 rounded-full bg-orange-500 shrink-0">
+        <div className="flex items-center justify-center size-8 rounded-full bg-brand-indigo shrink-0 shadow-sm">
           <UserCircle className="size-4 text-white" />
         </div>
       ) : (
-        <div className="flex items-center justify-center size-8 rounded-full bg-orange-100 dark:bg-orange-950/40 shrink-0">
-          <Bot className="size-4 text-orange-600 dark:text-orange-400" />
+        <div className="flex items-center justify-center size-8 rounded-full bg-white dark:bg-[#0d253d] border border-[#e3e8ee] dark:border-[#273951]/40 shrink-0 shadow-sm">
+          <Bot className="size-4 text-brand-indigo" />
         </div>
       )}
 
       <div
-        className={`rounded-2xl px-4 py-3 shadow-sm ${
+        className={`rounded-2xl px-4 py-3 shadow-[rgba(0,55,112,0.02)_0_1px_3px] ${
           isUser
-            ? 'bg-orange-500 text-white rounded-tr-sm'
-            : 'bg-white dark:bg-card border border-gray-200 dark:border-border text-gray-800 dark:text-foreground rounded-tl-sm'
+            ? 'bg-brand-indigo text-white rounded-tr-sm'
+            : 'bg-white dark:bg-[#0d253d] border border-[#e3e8ee] dark:border-[#273951]/40 text-[#0d253d] dark:text-white rounded-tl-sm'
         }`}
       >
         {!isUser && (
-          <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="flex items-center gap-1.5 mb-1.5 border-b border-[#e3e8ee] dark:border-[#273951]/40 pb-1.5">
             <span className="text-xs">🎓</span>
-            <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide">
+            <span className="text-[10px] font-bold text-brand-indigo dark:text-brand-indigo-soft uppercase tracking-wide">
               KotaAI Tutor
             </span>
           </div>
@@ -85,7 +87,7 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 
         <div
           className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${
-            isUser ? '' : 'prose-sm'
+            isUser ? 'font-light' : 'prose-sm text-[#0d253d] dark:text-white font-light'
           }`}
           dangerouslySetInnerHTML={
             isUser
@@ -103,14 +105,15 @@ function ChatBubble({ message }: { message: ChatMessage }) {
 /* ───────── AI Content Formatter ───────── */
 function formatAIContent(text: string): string {
   let html = text;
+  html = html.replace(/\*\*(.*?)\*\?/g, '<strong>$1</strong>');
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(
     /^(\d+[\.\)])\s/gm,
-    '<span class="text-orange-600 font-semibold">$1</span> '
+    '<span class="text-brand-indigo font-semibold">$1</span> '
   );
   html = html.replace(
     /^[-*]\s/gm,
-    '<span class="text-orange-500 mr-1">&#8226;</span> '
+    '<span class="text-brand-indigo mr-1.5">&#8226;</span> '
   );
   return html;
 }
@@ -185,7 +188,6 @@ export default function AIChat() {
   const handlePaymentSuccess = (updatedUser: User) => {
     setLimitReached(false);
     setAiUsage({ used: aiUsage.used, limit: Infinity });
-    // The store is already updated by PaymentModal
   };
 
   /* ── Send Message ── */
@@ -193,7 +195,6 @@ export default function AIChat() {
     const trimmed = input.trim();
     if (!trimmed || isLoading || !user) return;
 
-    // Check limit locally before sending
     if (limitReached) {
       return;
     }
@@ -286,10 +287,10 @@ export default function AIChat() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-background">
+    <div className="flex flex-col h-full bg-canvas-soft dark:bg-[#1c1e54]/20">
       {/* ── Subject Selector ── */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-200 dark:border-border shadow-sm">
-        <div className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-none">
+      <div className="sticky top-0 z-10 bg-white dark:bg-[#0d253d] border-b border-[#e3e8ee] dark:border-[#273951]/40 shadow-sm">
+        <div className="flex items-center gap-2 px-4 py-2.5 overflow-x-auto scrollbar-none">
           {SUBJECTS.map((s) => {
             const isActive = selectedSubject === s.value;
             return (
@@ -297,19 +298,19 @@ export default function AIChat() {
                 key={s.value}
                 onClick={() => setSelectedSubject(s.value)}
                 className={`
-                  flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium
-                  transition-all duration-200 whitespace-nowrap min-h-[40px]
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400
+                  flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold
+                  transition-all duration-200 whitespace-nowrap min-h-[36px]
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-indigo/30
                   ${
                     isActive
-                      ? 'bg-orange-500 text-white shadow-md shadow-orange-200 dark:shadow-none'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                      ? 'bg-brand-indigo text-white shadow-sm'
+                      : 'bg-white dark:bg-[#0d253d] text-[#4f566b] dark:text-[#a8c3de] hover:bg-canvas-soft/50 dark:hover:bg-[#1c1e54]/50 hover:text-[#0d253d] dark:hover:text-white border border-[#e3e8ee] dark:border-[#273951]/40'
                   }
                 `}
                 aria-pressed={isActive}
                 aria-label={`Select ${s.label}`}
               >
-                <span className="text-base" role="img" aria-hidden>
+                <span className="text-sm" role="img" aria-hidden>
                   {s.emoji}
                 </span>
                 <span>{s.label}</span>
@@ -321,10 +322,10 @@ export default function AIChat() {
           {user?.plan === 'free' && (
             <Badge
               variant="outline"
-              className={`ml-auto text-xs whitespace-nowrap ${
+              className={`ml-auto text-xs whitespace-nowrap px-3 py-1 rounded-full ${
                 aiUsage.used >= aiUsage.limit
-                  ? 'border-red-300 text-red-600 bg-red-50 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800'
-                  : 'border-orange-200 text-orange-600 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-800'
+                  ? 'border-[#ea2261]/40 text-[#ea2261] bg-[#ea2261]/10'
+                  : 'border-[#e3e8ee] dark:border-[#273951]/40 text-[#4f566b] dark:text-[#a8c3de] bg-white dark:bg-[#0d253d]'
               }`}
             >
               {aiUsage.used}/{aiUsage.limit === Infinity ? '∞' : aiUsage.limit} AI questions today
@@ -341,15 +342,15 @@ export default function AIChat() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-16 text-center"
+              className="flex flex-col items-center justify-center py-20 text-center"
             >
-              <div className="flex items-center justify-center size-16 rounded-full bg-orange-100 mb-4">
-                <Bot className="size-8 text-orange-500" />
+              <div className="flex items-center justify-center size-14 rounded-full bg-white dark:bg-[#0d253d] border border-[#e3e8ee] dark:border-[#273951]/40 mb-4 shadow-sm">
+                <Bot className="size-6 text-brand-indigo" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-foreground mb-1">
+              <h3 className="text-base font-semibold text-[#0d253d] dark:text-white mb-1">
                 Ask any doubt!
               </h3>
-              <p className="text-sm text-gray-500 dark:text-muted-foreground max-w-[280px]">
+              <p className="text-xs text-[#4f566b] dark:text-[#a8c3de] max-w-[280px] leading-relaxed font-light">
                 Type your {selectedSubject.toLowerCase()} question below and
                 I&apos;ll explain it step-by-step
               </p>
@@ -369,11 +370,11 @@ export default function AIChat() {
           )}
 
           {/* Messages */}
-          <AnimatePresence mode="popLayout">
+          <div className="flex flex-col gap-4">
             {chatMessages.map((msg) => (
               <ChatBubble key={msg.id} message={msg} />
             ))}
-          </AnimatePresence>
+          </div>
 
           {/* Typing indicator */}
           <AnimatePresence>
@@ -386,8 +387,8 @@ export default function AIChat() {
       </ScrollArea>
 
       {/* ── Input Area ── */}
-      <div className="sticky bottom-0 bg-white dark:bg-card border-t border-gray-200 dark:border-border p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-        <div className="flex items-end gap-2 max-w-3xl mx-auto">
+      <div className="sticky bottom-0 bg-white dark:bg-[#0d253d] border-t border-[#e3e8ee] dark:border-[#273951]/40 p-4 shadow-[rgba(0,0,0,0.03)_0_-4px_16px]">
+        <div className="flex items-end gap-3 max-w-3xl mx-auto">
           <div className="flex-1 relative">
             <Textarea
               ref={textareaRef}
@@ -396,19 +397,20 @@ export default function AIChat() {
               onKeyDown={handleKeyDown}
               placeholder={
                 limitReached
-                  ? 'Upgrade to ask more questions...'
-                  : `Ask any doubt from ${selectedSubject}...`
+                  ? 'Upgrade to ask more questions…'
+                  : `Ask any doubt from ${selectedSubject}…`
               }
               disabled={isLoading || limitReached}
               rows={1}
-              className="resize-none min-h-[44px] max-h-[104px] pr-3 py-3 text-sm rounded-xl border border-gray-300 dark:border-border focus-visible:border-orange-400 focus-visible:ring-orange-400/30 bg-gray-50 dark:bg-[#242424] text-foreground placeholder:text-gray-400 dark:placeholder:text-zinc-500 disabled:opacity-60"
+              className="resize-none min-h-[44px] max-h-[104px] pr-3 py-3 text-sm rounded-xl border border-[#a8c3de] dark:border-[#273951]/40 focus-visible:border-brand-indigo focus-visible:ring-brand-indigo/20 bg-canvas-soft dark:bg-[#1c1e54]/30 text-[#0d253d] dark:text-white placeholder:text-[#7a8c9f] disabled:opacity-60"
+              spellCheck={false}
             />
           </div>
           <Button
             onClick={sendMessage}
             disabled={isLoading || !input.trim() || limitReached}
             size="icon"
-            className="size-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white shrink-0 shadow-md disabled:opacity-50 transition-all"
+            className="size-11 rounded-xl bg-brand-indigo hover:bg-brand-indigo-deep text-white shrink-0 shadow-sm transition-all"
             aria-label="Send message"
           >
             {isLoading ? (
@@ -418,9 +420,9 @@ export default function AIChat() {
             )}
           </Button>
         </div>
-        <p className="text-[11px] text-gray-400 dark:text-zinc-500 text-center mt-1.5">
+        <p className="text-[10px] text-[#7a8c9f] dark:text-[#7a8c9f]/60 text-center mt-2">
           {limitReached ? (
-            <span className="text-red-500">Limit reached — upgrade to continue</span>
+            <span className="text-[#ea2261] font-semibold">Daily limit reached &middot; Upgrade to continue</span>
           ) : (
             <>Press Enter to send &middot; Shift+Enter for new line</>
           )}

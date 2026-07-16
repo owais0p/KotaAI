@@ -12,7 +12,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import Image from 'next/image';
 import {
   MessageSquare,
   BookOpen,
@@ -22,15 +21,14 @@ import {
   Menu,
   GraduationCap,
   Home as HomeIcon,
-  ChevronRight,
   Sparkles,
   Zap,
   Flame,
   AlertTriangle,
 } from 'lucide-react';
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, animate } from 'framer-motion';
+import { motion, AnimatePresence, animate } from 'framer-motion';
 
-import LandingPage from '@/components/kotaai/LandingPage';
+import LandingPage, { KotaAILogo } from '@/components/kotaai/LandingPage';
 import AuthPage from '@/components/kotaai/AuthPage';
 import AIChat from '@/components/kotaai/AIChat';
 import PracticePage from '@/components/kotaai/PracticePage';
@@ -39,8 +37,7 @@ import LeaderboardPage from '@/components/kotaai/LeaderboardPage';
 import PaymentModal from '@/components/kotaai/PaymentModal';
 import ThemeToggle from '@/components/kotaai/ThemeToggle';
 
-
-/* ─── 3D Tilt Subject Card Component ─── */
+/* ─── Subject Card Component ─── */
 function SubjectCard3D({
   children,
   onClick,
@@ -50,49 +47,15 @@ function SubjectCard3D({
   onClick: () => void;
   className: string;
 }) {
-  const cardRef = useRef<HTMLButtonElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [10, -10]), { stiffness: 200, damping: 20 });
-  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), { stiffness: 200, damping: 20 });
-  const scale = useSpring(1, { stiffness: 200, damping: 20 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
-    const mouseX = (e.clientX - rect.left) / rect.width - 0.5;
-    const mouseY = (e.clientY - rect.top) / rect.height - 0.5;
-    x.set(mouseX);
-    y.set(mouseY);
-  };
-
-  const handleMouseEnter = () => scale.set(1.04);
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-    scale.set(1);
-  };
-
   return (
-    <motion.button
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+    <button
       onClick={onClick}
-      style={{
-        rotateX,
-        rotateY,
-        scale,
-        transformStyle: 'preserve-3d',
-      }}
-      className={className}
+      className={`${className} transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 hover:shadow-md`}
     >
-      <div style={{ transform: 'translateZ(15px)' }} className="flex flex-col items-center gap-2 w-full h-full">
+      <div className="flex flex-col items-start gap-2 w-full h-full">
         {children}
       </div>
-    </motion.button>
+    </button>
   );
 }
 
@@ -101,10 +64,10 @@ function StreakFlame({ streak, streakAtRisk }: { streak: number; streakAtRisk: b
   const particles = [0, 1, 2];
   return (
     <Badge
-      className={`gap-1 font-bold relative overflow-hidden ${
+      className={`gap-1 font-normal font-tabular rounded-full px-2.5 py-0.5 border ${
         streakAtRisk
-          ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800'
-          : 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800'
+          ? 'bg-[#ea2261]/10 text-[#ea2261] border-[#ea2261]/35'
+          : 'bg-[#533afd]/10 text-[#533afd] border-[#533afd]/35 dark:bg-[#533afd]/20 dark:text-[#b9b9f9] dark:border-[#533afd]/45'
       }`}
     >
       <div className="relative flex items-center justify-center mr-1">
@@ -112,7 +75,7 @@ function StreakFlame({ streak, streakAtRisk }: { streak: number; streakAtRisk: b
           <motion.span
             key={i}
             className={`absolute rounded-full pointer-events-none ${
-              streakAtRisk ? 'bg-red-500' : 'bg-orange-500'
+              streakAtRisk ? 'bg-[#ea2261]' : 'bg-[#533afd]'
             }`}
             style={{ width: 3, height: 3, bottom: 2 }}
             animate={{
@@ -140,7 +103,7 @@ function StreakFlame({ streak, streakAtRisk }: { streak: number; streakAtRisk: b
             ease: 'easeInOut',
           }}
         >
-          <Flame className={`size-3.5 ${streakAtRisk ? 'text-red-500' : 'text-orange-500'} fill-current`} />
+          <Flame className={`size-3.5 ${streakAtRisk ? 'text-[#ea2261]' : 'text-[#533afd]'} fill-current`} />
         </motion.div>
       </div>
       <span>{streak} day{streak !== 1 ? 's' : ''}</span>
@@ -173,11 +136,11 @@ function DashboardCounter({ value }: { value: string }) {
   }, [value, numericValue]);
 
   if (numericValue === null) {
-    return <span>{value}</span>;
+    return <span className="font-tabular">{value}</span>;
   }
 
   return (
-    <span>
+    <span className="font-tabular">
       <span ref={ref}>0</span>
       {suffix}
     </span>
@@ -186,92 +149,25 @@ function DashboardCounter({ value }: { value: string }) {
 
 /* ───────── Navigation Items ───────── */
 const NAV_ITEMS = [
-  { id: 'dashboard' as const, label: 'Overview', icon: HomeIcon },
-  { id: 'chat' as const, label: 'AI Tutor', icon: MessageSquare },
-  { id: 'practice' as const, label: 'Practice', icon: BookOpen },
-  { id: 'progress' as const, label: 'Progress', icon: BarChart3 },
-  { id: 'leaderboard' as const, label: 'Leaderboard', icon: Trophy },
+  { id: 'dashboard', label: 'Dashboard', icon: HomeIcon },
+  { id: 'chat', label: 'AI Doubt Solver', icon: MessageSquare },
+  { id: 'practice', label: 'Daily Practice', icon: BookOpen },
+  { id: 'progress', label: 'Mentoring & Progress', icon: BarChart3 },
+  { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
 ];
 
 /* ───────── Dashboard Overview Component ───────── */
 function DashboardOverview() {
-  const { user, setView, setSelectedSubject, setUser } = useAppStore();
+  const { user, setSelectedSubject, setView } = useAppStore();
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<'pro' | 'premium'>('pro');
-  const [streakAtRisk, setStreakAtRisk] = useState(false);
 
-  // Fetch streak status
-  useEffect(() => {
-    if (!user?.id) return;
-    fetch(`/api/streak?userId=${encodeURIComponent(user.id)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          setStreakAtRisk(data.streakAtRisk);
-          // Update user in store with latest streak
-          if (user.streak !== data.streak) {
-            setUser({ ...user, streak: data.streak, lastPracticeDate: data.lastPracticeDate });
-          }
-        }
-      })
-      .catch(() => {});
-  }, [user?.id, user?.streak, user?.lastPracticeDate, setUser]);
-
-  const quickActions = [
-    {
-      label: 'Ask a Doubt',
-      description: 'Get step-by-step AI explanations',
-      icon: MessageSquare,
-      color: 'bg-orange-500',
-      hoverColor: 'hover:bg-orange-600',
-      view: 'chat' as const,
-    },
-    {
-      label: 'Daily Practice',
-      description: '50 MCQs per subject',
-      icon: BookOpen,
-      color: 'bg-emerald-500',
-      hoverColor: 'hover:bg-emerald-600',
-      view: 'practice' as const,
-    },
-    {
-      label: 'Track Progress',
-      description: 'See your strengths & weak areas',
-      icon: BarChart3,
-      color: 'bg-purple-500',
-      hoverColor: 'hover:bg-purple-600',
-      view: 'progress' as const,
-    },
-    {
-      label: 'Leaderboard',
-      description: 'Compete with top students',
-      icon: Trophy,
-      color: 'bg-amber-500',
-      hoverColor: 'hover:bg-amber-600',
-      view: 'leaderboard' as const,
-    },
-  ];
-
-  const subjects = [
-    { name: 'Physics', emoji: '⚛️', color: 'border-purple-300 bg-purple-50 dark:bg-purple-950/30 dark:border-purple-800', count: '50 MCQs' },
-    { name: 'Chemistry', emoji: '🧪', color: 'border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800', count: '50 MCQs' },
-    { name: 'Maths', emoji: '📐', color: 'border-sky-300 bg-sky-50 dark:bg-sky-950/30 dark:border-sky-800', count: '50 MCQs' },
-    { name: 'Biology', emoji: '🧬', color: 'border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800', count: '50 MCQs' },
-  ];
-
-  const planBadge = user?.plan === 'premium'
-    ? { label: 'Premium', class: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800' }
-    : user?.plan === 'pro'
-    ? { label: 'Pro', class: 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800' }
-    : { label: 'Free', class: 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700' };
-
-  // Stagger entrance animations
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
+        staggerChildren: 0.05,
       },
     },
   };
@@ -281,9 +177,61 @@ function DashboardOverview() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { type: 'spring', stiffness: 100, damping: 15 },
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+        damping: 15,
+      },
     },
   };
+
+  // Calculate streak warnings
+  const streakAtRisk = user?.streak ? (user.streak > 0 && user.lastPracticeDate !== new Date().toISOString().split('T')[0]) : false;
+
+  const quickActions = [
+    {
+      label: 'Solve Doubts',
+      description: 'Ask anything and get instant step-by-step solutions.',
+      icon: MessageSquare,
+      view: 'chat',
+      color: 'bg-brand-indigo',
+    },
+    {
+      label: 'Solve MCQ Questions',
+      description: 'Test your understanding with fresh JEE/NEET questions.',
+      icon: BookOpen,
+      view: 'practice',
+      color: 'bg-emerald-500',
+    },
+    {
+      label: 'View Progress',
+      description: 'Analyze subject completion rates and weak topics.',
+      icon: BarChart3,
+      view: 'progress',
+      color: 'bg-purple-600',
+    },
+    {
+      label: 'Leaderboard',
+      description: 'Check rankings and compare with top rankers.',
+      icon: Trophy,
+      view: 'leaderboard',
+      color: 'bg-amber-500',
+    },
+  ];
+
+  const subjects = [
+    { name: 'Physics', emoji: '⚛️', count: '50 questions available' },
+    { name: 'Chemistry', emoji: '🧪', count: '50 questions available' },
+    { name: 'Maths', emoji: '📐', count: '50 questions available' },
+    { name: 'Biology', emoji: '🧬', count: '50 questions available' },
+  ];
+
+  const planBadge =
+    user?.plan === 'premium'
+      ? { label: 'Premium Scholar', class: 'bg-[#ea2261]/10 text-[#ea2261] border-[#ea2261]/20' }
+      : user?.plan === 'pro'
+      ? { label: 'Pro Aspirant', class: 'bg-brand-indigo/10 text-brand-indigo border-brand-indigo/20 dark:bg-brand-indigo/20 dark:text-brand-indigo-soft' }
+      : { label: 'Free Tier', class: 'bg-canvas-soft text-ink-mute border-hairline dark:bg-[#1c1e54]/20 dark:text-[#a8c3de] dark:border-[#273951]/40' };
 
   return (
     <motion.div
@@ -293,16 +241,16 @@ function DashboardOverview() {
       className="space-y-8 p-4 md:p-6 max-w-4xl mx-auto"
     >
       {/* Welcome Section */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <Avatar className="size-14 ring-2 ring-orange-200 dark:ring-orange-800">
-          <AvatarFallback className="bg-orange-500 text-white text-xl font-bold">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b border-[#e3e8ee] dark:border-[#273951]/40 pb-6">
+        <Avatar className="size-14 ring-2 ring-brand-indigo/40 ring-offset-2 ring-offset-white dark:ring-offset-[#0d253d]">
+          <AvatarFallback className="bg-brand-indigo text-white text-xl font-bold">
             {user?.name?.charAt(0)?.toUpperCase() || 'S'}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold">Welcome back, {user?.name?.split(' ')[0] || 'Student'}!</h1>
-            <Badge variant="outline" className={planBadge.class}>
+            <h1 className="text-2xl font-light tracking-tight text-[#0d253d] dark:text-white">Welcome back, {user?.name?.split(' ')[0] || 'Student'}!</h1>
+            <Badge variant="outline" className={`text-xs font-semibold px-2 py-0.5 ${planBadge.class}`}>
               {planBadge.label}
             </Badge>
             {/* Streak Badge */}
@@ -310,8 +258,8 @@ function DashboardOverview() {
               <StreakFlame streak={user?.streak ?? 0} streakAtRisk={streakAtRisk} />
             )}
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Ready to crack JEE & NEET? Let&apos;s continue your preparation.
+          <p className="text-[#4f566b] dark:text-[#a8c3de] text-xs mt-1 font-light">
+            Ready to crack JEE &amp; NEET? Let&apos;s continue your preparation.
           </p>
         </div>
       </motion.div>
@@ -320,22 +268,22 @@ function DashboardOverview() {
       {streakAtRisk && (user?.streak ?? 0) > 0 && (
         <motion.div
           variants={itemVariants}
-          className="flex items-center gap-3 rounded-xl border-2 border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20 p-4"
+          className="flex items-center gap-3 rounded-xl border border-[#ea2261]/35 bg-[#ea2261]/5 p-4"
         >
-          <div className="flex items-center justify-center size-10 rounded-full bg-red-100 dark:bg-red-950/50 shrink-0">
-            <AlertTriangle className="size-5 text-red-600 dark:text-red-400" />
+          <div className="flex items-center justify-center size-10 rounded-full bg-[#ea2261]/10 shrink-0">
+            <AlertTriangle className="size-5 text-[#ea2261]" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-bold text-red-700 dark:text-red-400">
+            <p className="text-sm font-semibold text-[#0d253d] dark:text-white">
               🔥 Streak at risk!
             </p>
-            <p className="text-xs text-red-600 dark:text-red-400/80">
+            <p className="text-xs text-[#4f566b] dark:text-[#a8c3de]">
               You haven&apos;t practiced today. Your {user?.streak}-day streak will reset if you miss today!
             </p>
           </div>
           <Button
             size="sm"
-            className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+            className="bg-brand-indigo hover:bg-brand-indigo-deep text-white shrink-0 rounded-full text-xs"
             onClick={() => setView('practice')}
           >
             <BookOpen className="size-3.5 mr-1" />
@@ -346,42 +294,40 @@ function DashboardOverview() {
 
       {/* Quick Actions */}
       <motion.div variants={itemVariants}>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Zap className="size-5 text-orange-500" />
+        <h2 className="text-xs uppercase tracking-wider text-[#4f566b] dark:text-[#a8c3de] font-semibold mb-4 flex items-center gap-2">
+          <Zap className="size-4 text-brand-indigo" />
           Quick Actions
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {quickActions.map((action) => (
-            <motion.button
+            <button
               key={action.label}
               onClick={() => setView(action.view)}
-              whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border p-5 hover:border-orange-300 hover:bg-orange-50/50 dark:hover:border-orange-800 dark:hover:bg-orange-950/20 transition-all group w-full"
+              className="flex flex-col items-start gap-4 rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] hover:border-brand-indigo/60 hover:bg-canvas-soft/20 dark:hover:bg-[#1c1e54]/50 hover:-translate-y-1 hover:shadow-md p-5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] text-left group w-full shadow-sm"
             >
-              <div className={`flex size-12 items-center justify-center rounded-xl ${action.color} ${action.hoverColor} text-white shadow-lg transition-colors`}>
-                <action.icon className="size-6" />
+              <div className={`flex size-10 items-center justify-center rounded-lg ${action.color} text-white shadow-sm`}>
+                <action.icon className="size-5" />
               </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-[#0d253d] dark:text-white group-hover:text-brand-indigo transition-colors">
                   {action.label}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-[#4f566b] dark:text-[#a8c3de] mt-1 font-light leading-snug">
                   {action.description}
                 </p>
               </div>
-            </motion.button>
+            </button>
           ))}
         </div>
       </motion.div>
 
       {/* Subjects Grid */}
       <motion.div variants={itemVariants}>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <GraduationCap className="size-5 text-orange-500" />
+        <h2 className="text-xs uppercase tracking-wider text-[#4f566b] dark:text-[#a8c3de] font-semibold mb-4 flex items-center gap-2">
+          <GraduationCap className="size-4 text-brand-indigo" />
           Subjects
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {subjects.map((subject) => (
             <SubjectCard3D
               key={subject.name}
@@ -389,70 +335,78 @@ function DashboardOverview() {
                 setSelectedSubject(subject.name as 'Physics' | 'Chemistry' | 'Maths' | 'Biology');
                 setView('practice');
               }}
-              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-5 transition-all hover:shadow-lg ${subject.color} w-full h-full`}
+              className="flex flex-col items-start gap-2 rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] hover:border-brand-indigo/60 hover:bg-canvas-soft/20 dark:hover:bg-[#1c1e54]/50 p-5 transition-all text-left w-full h-full shadow-sm"
             >
-              <span className="text-3xl">{subject.emoji}</span>
-              <span className="text-sm font-semibold">{subject.name}</span>
-              <span className="text-xs text-muted-foreground">{subject.count}</span>
-              <ChevronRight className="size-4 text-muted-foreground mt-auto" />
+              <span className="text-3xl mb-1">{subject.emoji}</span>
+              <span className="text-sm font-semibold text-[#0d253d] dark:text-white">{subject.name}</span>
+              <span className="text-[11px] text-[#4f566b] dark:text-[#a8c3de] font-light mt-auto">{subject.count}</span>
             </SubjectCard3D>
           ))}
         </div>
       </motion.div>
 
       {/* Stats Cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border bg-card p-4 text-center">
-          <div className="flex items-center justify-center size-10 rounded-lg bg-orange-100 dark:bg-orange-950/50 mx-auto mb-2">
-            <MessageSquare className="size-5 text-orange-600 dark:text-orange-400" />
+      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] p-5 flex items-center gap-4 shadow-sm">
+          <div className="flex items-center justify-center size-10 rounded-lg bg-[#533afd]/10 border border-[#533afd]/20 shrink-0">
+            <MessageSquare className="size-5 text-[#533afd]" />
           </div>
-          <p className="text-2xl font-bold"><DashboardCounter value="24/7" /></p>
-          <p className="text-xs text-muted-foreground">AI Tutor</p>
+          <div>
+            <p className="text-xl font-light text-[#0d253d] dark:text-white"><DashboardCounter value="24/7" /></p>
+            <p className="text-[10px] text-[#4f566b] dark:text-[#a8c3de] uppercase tracking-wider font-semibold">AI Tutor</p>
+          </div>
         </div>
-        <div className="rounded-xl border bg-card p-4 text-center">
-          <div className="flex items-center justify-center size-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 mx-auto mb-2">
-            <BookOpen className="size-5 text-emerald-600 dark:text-emerald-400" />
+        <div className="rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] p-5 flex items-center gap-4 shadow-sm">
+          <div className="flex items-center justify-center size-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+            <BookOpen className="size-5 text-emerald-600" />
           </div>
-          <p className="text-2xl font-bold"><DashboardCounter value="200+" /></p>
-          <p className="text-xs text-muted-foreground">MCQ Bank</p>
+          <div>
+            <p className="text-xl font-light text-[#0d253d] dark:text-white"><DashboardCounter value="200+" /></p>
+            <p className="text-[10px] text-[#4f566b] dark:text-[#a8c3de] uppercase tracking-wider font-semibold">MCQ Bank</p>
+          </div>
         </div>
-        <div className="rounded-xl border bg-card p-4 text-center">
-          <div className="flex items-center justify-center size-10 rounded-lg bg-purple-100 dark:bg-purple-950/50 mx-auto mb-2">
-            <BarChart3 className="size-5 text-purple-600 dark:text-purple-400" />
+        <div className="rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] p-5 flex items-center gap-4 shadow-sm">
+          <div className="flex items-center justify-center size-10 rounded-lg bg-purple-500/10 border border-purple-500/20 shrink-0">
+            <BarChart3 className="size-5 text-purple-600" />
           </div>
-          <p className="text-2xl font-bold"><DashboardCounter value="4" /></p>
-          <p className="text-xs text-muted-foreground">Subjects</p>
+          <div>
+            <p className="text-xl font-light text-[#0d253d] dark:text-white"><DashboardCounter value="4" /></p>
+            <p className="text-[10px] text-[#4f566b] dark:text-[#a8c3de] uppercase tracking-wider font-semibold">Subjects</p>
+          </div>
         </div>
-        <div className="rounded-xl border bg-card p-4 text-center">
-          <div className="flex items-center justify-center size-10 rounded-lg bg-amber-100 dark:bg-amber-950/50 mx-auto mb-2">
-            <Sparkles className="size-5 text-amber-600 dark:text-amber-400" />
+        <div className="rounded-xl border border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d] p-5 flex items-center gap-4 shadow-sm">
+          <div className="flex items-center justify-center size-10 rounded-lg bg-amber-500/10 border border-amber-500/20 shrink-0">
+            <Sparkles className="size-5 text-amber-600" />
           </div>
-          <p className="text-2xl font-bold">AI</p>
-          <p className="text-xs text-muted-foreground">Powered</p>
+          <div>
+            <p className="text-xl font-light text-[#0d253d] dark:text-white">AI</p>
+            <p className="text-[10px] text-[#4f566b] dark:text-[#a8c3de] uppercase tracking-wider font-semibold">Powered</p>
+          </div>
         </div>
       </motion.div>
 
       {/* CTA Banner - Free users: Upgrade prompt, Paid users: Practice prompt */}
       <motion.div variants={itemVariants}>
         {user?.plan === 'free' ? (
-          <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
-            <h3 className="text-lg font-bold mb-1">
+          <div className="rounded-xl bg-gradient-to-r from-brand-indigo to-brand-indigo-soft p-6 text-center text-white shadow-[rgba(83,58,253,0.15)_0_8px_20px] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(at_0%_0%,_rgba(255,_255,_255,_0.05)_0,_transparent_50%)] pointer-events-none" />
+            <h3 className="text-lg font-normal mb-1">
               Unlock Unlimited Practice
             </h3>
-            <p className="text-sm text-orange-100 mb-4">
-              Free plan: 10 MCQs/subject/day & 3 AI questions/day. Upgrade for unlimited access!
+            <p className="text-xs text-white/80 mb-4 font-light max-w-lg mx-auto">
+              Upgrade your free subscription to unlock unlimited doubt clears and customized adaptive MCQ generators today.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
                 onClick={() => { setUpgradePlan('pro'); setUpgradeModalOpen(true); }}
-                className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
+                className="bg-white text-brand-indigo hover:bg-canvas-soft font-semibold shadow-md rounded-full px-5 py-2"
               >
                 <Zap className="size-4 mr-2" />
                 Upgrade to Pro — ₹299/mo
               </Button>
               <Button
                 onClick={() => { setUpgradePlan('premium'); setUpgradeModalOpen(true); }}
-                className="bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold shadow-lg border border-amber-300"
+                className="bg-[#f5e9d4] text-[#9b6829] hover:bg-[#f5e9d4]/90 font-semibold shadow-md border border-[#9b6829]/20 rounded-full px-5 py-2"
               >
                 <Sparkles className="size-4 mr-2" />
                 Premium — ₹699/mo
@@ -460,16 +414,17 @@ function DashboardOverview() {
             </div>
           </div>
         ) : (
-          <div className="rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 p-6 text-center text-white">
-            <h3 className="text-lg font-bold mb-1">
+          <div className="rounded-xl bg-gradient-to-r from-brand-indigo to-brand-indigo-soft p-6 text-center text-white shadow-[rgba(83,58,253,0.15)_0_8px_20px] relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(at_0%_0%,_rgba(255,_255,_255,_0.05)_0,_transparent_50%)] pointer-events-none" />
+            <h3 className="text-lg font-normal mb-1">
               Start Today&apos;s Practice Session
             </h3>
-            <p className="text-sm text-orange-100 mb-4">
+            <p className="text-xs text-white/80 mb-4 font-light max-w-lg mx-auto">
               Complete your daily MCQs and climb the leaderboard!
             </p>
             <Button
               onClick={() => setView('practice')}
-              className="bg-white text-orange-600 hover:bg-orange-50 font-semibold shadow-lg"
+              className="bg-white text-brand-indigo hover:bg-canvas-soft font-semibold shadow-md rounded-full px-6 py-2"
             >
               <BookOpen className="size-4 mr-2" />
               Start Practicing
@@ -512,30 +467,23 @@ function DashboardShell() {
 
   const planLabel = user?.plan === 'premium' ? 'Premium' : user?.plan === 'pro' ? 'Pro' : 'Free';
   const planColor = user?.plan === 'premium'
-    ? 'text-amber-600 dark:text-amber-400'
+    ? 'text-[#9b6829]'
     : user?.plan === 'pro'
-    ? 'text-orange-600 dark:text-orange-400'
-    : 'text-muted-foreground';
+    ? 'text-[#533afd] dark:text-brand-indigo-soft'
+    : 'text-[#4f566b] dark:text-[#a8c3de]';
 
   /* ── Sidebar Content (shared between Sheet and desktop) ── */
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white dark:bg-[#0d253d] text-[#0d253d] dark:text-white">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-5 border-b">
-        <Image
-          src="/logo.png"
-          alt="KotaAI Logo"
-          width={36}
-          height={36}
-          className="rounded-lg"
-          priority
-        />
+      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[#e3e8ee] dark:border-[#273951]/40">
+        <KotaAILogo className="size-8 text-brand-indigo" />
         <div>
-          <span className="text-lg font-bold">
-            Kota<span className="text-orange-500">AI</span>
+          <span className="text-lg font-bold tracking-tight">
+            Kota<span className="text-[#533afd]">AI</span>
           </span>
-          <p className="text-[10px] text-muted-foreground leading-tight">
-            Your 24/7 JEE & NEET Tutor
+          <p className="text-[10px] text-[#4f566b] dark:text-[#a8c3de] font-light leading-tight">
+            Your 24/7 JEE &amp; NEET Tutor
           </p>
         </div>
       </div>
@@ -548,21 +496,21 @@ function DashboardShell() {
             <motion.button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              whileHover={{ x: 4 }}
+              whileHover={{ x: 3 }}
               whileTap={{ scale: 0.98 }}
               className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all text-left
                 ${
                   isActive
-                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 shadow-sm'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-[#533afd]/10 text-[#533afd] dark:bg-[#533afd]/20 dark:text-white'
+                    : 'text-[#4f566b] dark:text-[#a8c3de] hover:bg-canvas-soft/80 dark:hover:bg-[#1c1e54]/50 hover:text-[#0d253d] dark:hover:text-white'
                 }
               `}
             >
-              <item.icon className={`size-5 ${isActive ? 'text-orange-500' : ''}`} />
+              <item.icon className={`size-4.5 ${isActive ? 'text-[#533afd] dark:text-white' : 'text-[#4f566b] dark:text-[#a8c3de]'}`} />
               {item.label}
               {isActive && (
-                <div className="ml-auto size-1.5 rounded-full bg-orange-500" />
+                <div className="ml-auto size-1.5 rounded-full bg-[#533afd] dark:bg-white animate-pulse" />
               )}
             </motion.button>
           );
@@ -570,7 +518,7 @@ function DashboardShell() {
       </nav>
 
       {/* User Section */}
-      <div className="border-t p-3">
+      <div className="border-t border-[#e3e8ee] dark:border-[#273951]/40 p-3 bg-canvas-soft/20 dark:bg-[#1c1e54]/10">
         {/* Upgrade banner for free users */}
         {user?.plan === 'free' && (
           <button
@@ -578,26 +526,26 @@ function DashboardShell() {
               setUpgradePlan('pro');
               setUpgradeModalOpen(true);
             }}
-            className="w-full mb-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 px-3 py-2 text-sm text-white font-medium hover:from-orange-600 hover:to-amber-600 transition-all flex items-center gap-2"
+            className="w-full mb-3.5 rounded-full bg-gradient-to-r from-brand-indigo to-brand-indigo-soft px-4 py-2 text-xs text-white font-semibold hover:opacity-90 shadow-sm transition-all flex items-center justify-center gap-2"
           >
-            <Zap className="size-4" />
+            <Zap className="size-3.5" />
             Upgrade to Pro
           </button>
         )}
         <div className="flex items-center gap-3 px-2 py-2">
-          <Avatar className="size-9">
-            <AvatarFallback className="bg-orange-500 text-white text-sm font-bold">
+          <Avatar className="size-9 ring-2 ring-[#533afd]/20">
+            <AvatarFallback className="bg-brand-indigo text-white text-sm font-bold">
               {user?.name?.charAt(0)?.toUpperCase() || 'S'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <p className={`text-xs ${planColor}`}>{planLabel} Plan</p>
+            <p className="text-xs font-semibold truncate text-[#0d253d] dark:text-white">{user?.name}</p>
+            <p className={`text-[10px] uppercase font-bold tracking-wider ${planColor}`}>{planLabel} Plan</p>
           </div>
         </div>
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors mt-1"
+          className="w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs text-[#4f566b] dark:text-[#a8c3de] hover:bg-[#ea2261]/10 dark:hover:bg-[#ea2261]/20 hover:text-[#ea2261] transition-colors mt-1 font-semibold"
         >
           <LogOut className="size-4" />
           Logout
@@ -627,25 +575,25 @@ function DashboardShell() {
   const currentNav = NAV_ITEMS.find((item) => item.id === currentView);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-canvas-soft dark:bg-[#1c1e54]/20 text-[#0d253d] dark:text-white">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r bg-card">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r border-[#e3e8ee] dark:border-[#273951]/40 bg-white">
         {sidebarContent}
       </aside>
 
       {/* ── Main Area ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* ── Top Header ── */}
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b bg-background/95 backdrop-blur px-4 py-3">
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[#e3e8ee] dark:border-[#273951]/40 bg-white/90 dark:bg-[#0d253d]/90 backdrop-blur-md px-4 py-3.5">
           {/* Mobile menu trigger */}
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
+              <Button variant="ghost" size="icon" className="lg:hidden text-[#4f566b] dark:text-[#a8c3de] hover:bg-canvas-soft/80 dark:hover:bg-[#1c1e54]/50 hover:text-[#0d253d] dark:hover:text-white">
                 <Menu className="size-5" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
+            <SheetContent side="left" className="w-64 p-0 border-[#e3e8ee] dark:border-[#273951]/40 bg-white dark:bg-[#0d253d]">
               <SheetHeader className="sr-only">
                 <SheetTitle>Navigation Menu</SheetTitle>
               </SheetHeader>
@@ -657,25 +605,27 @@ function DashboardShell() {
           <div className="flex items-center gap-2">
             {currentNav && (
               <>
-                <currentNav.icon className="size-5 text-orange-500" />
-                <h1 className="text-base font-semibold">{currentNav.label}</h1>
+                <currentNav.icon className="size-4 text-brand-indigo dark:text-brand-indigo-soft" />
+                <h1 className="text-sm font-semibold text-[#0d253d] dark:text-white tracking-wide">{currentNav.label}</h1>
               </>
             )}
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2.5">
             <ThemeToggle />
+            
             {/* Mobile user avatar */}
             <Avatar className="size-8 lg:hidden">
-              <AvatarFallback className="bg-orange-500 text-white text-xs font-bold">
+              <AvatarFallback className="bg-brand-indigo text-white text-xs font-bold">
                 {user?.name?.charAt(0)?.toUpperCase() || 'S'}
               </AvatarFallback>
             </Avatar>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden text-muted-foreground hover:text-red-500"
+              className="lg:hidden text-[#4f566b] dark:text-[#a8c3de] hover:text-[#ea2261] hover:bg-[#ea2261]/10 rounded-full"
               onClick={logout}
+              aria-label="Logout"
             >
               <LogOut className="size-4" />
             </Button>
@@ -683,14 +633,14 @@ function DashboardShell() {
         </header>
 
         {/* ── Content ── */}
-        <main className={`flex-1 min-h-0 ${currentView === 'chat' ? 'flex flex-col' : 'overflow-y-auto custom-scrollbar'} relative`}>
+        <main className={`flex-1 min-h-0 ${currentView === 'chat' ? 'flex flex-col bg-canvas-soft dark:bg-[#1c1e54]/20' : 'overflow-y-auto custom-scrollbar bg-canvas-soft dark:bg-[#1c1e54]/20'} relative`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
               className={currentView === 'chat' ? 'flex flex-col flex-1 h-full' : 'w-full h-full'}
             >
               {renderContent()}
@@ -737,17 +687,10 @@ export default function Home() {
   // Prevent flash of wrong content during hydration
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-canvas-soft">
         <div className="flex flex-col items-center gap-3">
-          <Image
-            src="/logo.png"
-            alt="KotaAI Logo"
-            width={48}
-            height={48}
-            className="rounded-xl animate-pulse"
-            priority
-          />
-          <p className="text-sm text-muted-foreground">Loading KotaAI...</p>
+          <KotaAILogo className="size-12 animate-pulse text-brand-indigo" />
+          <p className="text-xs text-[#4f566b]">Loading KotaAI…</p>
         </div>
       </div>
     );
